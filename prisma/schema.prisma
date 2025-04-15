@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  accounts      Account[]
+  sessions      Session[]
+  trades        Trade[]
+  tradingAccounts TradingAccount[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model TradingAccount {
+  id            String   @id @default(cuid())
+  name          String
+  balance       Float
+  initialBalance Float
+  broker        String
+  type          String
+  currency      String
+  riskPerTrade  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades        Trade[]
+
+  @@index([userId])
+}
+
+model TradingPair {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trades    Trade[]
+}
+
+model Trade {
+  id              String        @id @default(cuid())
+  tradingPairId   String
+  tradingPair     TradingPair   @relation(fields: [tradingPairId], references: [id], onDelete: Cascade)
+  direction       TradeDirection
+  bias           TradeBias?
+  biasExplanation String?
+  psychology     String?
+  result         TradeResult
+  pnl            Float
+  riskAmount     Float?        // Cantidad arriesgada en el trade
+  images         String[]
+  date           DateTime
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tradingPairId])
+  @@index([accountId])
+}
+
+enum TradeDirection {
+  LONG
+  SHORT
+}
+
+enum TradeBias {
+  BULLISH
+  BEARISH
+  NEUTRAL
+}
+
+enum TradeResult {
+  WIN
+  LOSS
+  BREAKEVEN
+}
