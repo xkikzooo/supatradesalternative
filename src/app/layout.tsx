@@ -17,8 +17,18 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "TradeLog",
+  title: "SupaTrades",
   description: "Tu diario de trading personal",
+  icons: {
+    icon: [
+      {
+        url: "/Favicon.svg",
+        type: "image/svg+xml",
+      }
+    ],
+    shortcut: "/Favicon.svg",
+    apple: "/Favicon.svg"
+  }
 };
 
 export default function RootLayout({

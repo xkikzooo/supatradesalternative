@@ -28,7 +28,7 @@ export function TradeDetails({ trade }: TradeDetailsProps) {
       <AccordionItem value="details" className="border-none">
         <AccordionTrigger className="hover:no-underline">
           <div className="flex items-center gap-2">
-            <Badge variant={trade.result === "WIN" ? "success" : "destructive"}>
+            <Badge variant={trade.result === "WIN" ? "default" : "destructive"}>
               {trade.result}
             </Badge>
             <span className="text-sm text-muted-foreground">

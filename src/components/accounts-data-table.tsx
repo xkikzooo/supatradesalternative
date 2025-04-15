@@ -26,7 +26,7 @@ interface Account {
   type: 'Fondeada' | 'Challenge';
   currency: string;
   createdAt: string;
-  lastUpdated: string;
+  updatedAt: string;
   riskPerTrade?: string;
 }
 

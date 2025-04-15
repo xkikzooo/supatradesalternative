@@ -19,6 +19,18 @@ export async function GET() {
       where: {
         userId: session.user.id,
       },
+      select: {
+        id: true,
+        name: true,
+        balance: true,
+        initialBalance: true,
+        broker: true,
+        type: true,
+        currency: true,
+        createdAt: true,
+        updatedAt: true,
+        riskPerTrade: true,
+      },
       orderBy: {
         createdAt: 'desc',
       },

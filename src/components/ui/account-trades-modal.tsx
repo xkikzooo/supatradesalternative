@@ -15,6 +15,7 @@ interface Trade {
   bias: string;
   psychology?: string;
   images: string[];
+  direction: 'LONG' | 'SHORT';
   account?: {
     id: string;
     name: string;

@@ -71,17 +71,16 @@ export default function RegisterPage() {
       {/* Sección izquierda - Formulario */}
       <div className="flex w-full flex-col justify-center px-8 py-12 sm:w-1/2 sm:px-12 lg:px-24">
         <div className="mx-auto w-full max-w-sm">
-          <div className="mb-8">
-            <div className="flex justify-center items-center h-10 rounded-lg bg-gray-800/50 mb-6">
-              <Image
-                src="/supatrades.svg"
-                alt="SupaTrades Logo"
-                width={120}
-                height={30}
-                priority
-              />
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight text-white">
+          <div className="flex flex-col items-center mb-8">
+            <Image
+              src="/supatrades.svg"
+              alt="Supatrades Logo"
+              width={200}
+              height={60}
+              className="mb-6"
+              priority
+            />
+            <h2 className="text-3xl font-bold tracking-tight text-white text-center">
               Crea tu cuenta
             </h2>
             <p className="mt-2 text-sm text-gray-400">
