@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToasterProvider } from "@/components/providers/toaster-provider";
 import { AuthProvider } from "@/providers/session-provider";
+import React from 'react';
 
 const inter = Inter({ 
   subsets: ["latin"],

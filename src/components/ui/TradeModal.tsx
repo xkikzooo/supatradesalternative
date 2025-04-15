@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,7 +129,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
     }
   };
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     try {
       const res = await fetch('/api/accounts');
       if (!res.ok) {
@@ -149,14 +149,14 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       showToast('Error al cargar las cuentas', 'error');
       setAccounts([]);
     }
-  };
+  }, [formData]);
 
   useEffect(() => {
     if (isOpen) {
       fetchTradingPairs();
       fetchAccounts();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchAccounts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

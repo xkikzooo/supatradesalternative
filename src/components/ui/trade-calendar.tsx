@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -43,11 +43,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
   const [dailyPnLs, setDailyPnLs] = useState<{ [key: string]: number }>({});
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  useEffect(() => {
-    calculatePnLs();
-  }, [trades, currentMonth]);
-
-  const calculatePnLs = () => {
+  const calculatePnLs = useCallback(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
 
@@ -94,7 +90,11 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
     });
 
     setWeeklyPnLs(weeklyTotals);
-  };
+  }, [trades, currentMonth]);
+
+  useEffect(() => {
+    calculatePnLs();
+  }, [calculatePnLs]);
 
   const getTradesForDay = (day: Date) => {
     return trades.filter(trade => 
