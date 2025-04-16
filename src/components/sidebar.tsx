@@ -9,7 +9,7 @@ import {
   LineChart,
   Settings,
   LogOut,
-  User,
+  Wallet,
   MoreVertical,
   Plus
 } from 'lucide-react';
@@ -89,7 +89,7 @@ export function Sidebar() {
                 pathname === '/accounts' ? 'bg-gray-800/50 text-gray-300' : 'hover:bg-gray-800/50'
               )}
             >
-              <User className="h-4 w-4" />
+              <Wallet className="h-4 w-4" />
               Cuentas
             </Link>
           </div>
