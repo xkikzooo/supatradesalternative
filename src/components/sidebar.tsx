@@ -43,7 +43,7 @@ export function Sidebar() {
 
         <button
           onClick={() => setIsTradeModalOpen(true)}
-          className="mt-4 w-full flex items-center gap-2 rounded-lg px-3 py-2 bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700/50 text-sm"
+          className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-blue-500/80 text-white transition-all hover:bg-blue-600/90 text-sm font-medium"
         >
           <Plus className="h-4 w-4" />
           Nuevo Trade
