@@ -10,15 +10,19 @@ import {
   Settings,
   LogOut,
   User,
-  MoreVertical
+  MoreVertical,
+  Plus
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuContent, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
+import { useState } from 'react';
+import { TradeModal } from '@/components/ui/TradeModal';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/login' });
@@ -36,6 +40,14 @@ export function Sidebar() {
             priority
           />
         </div>
+
+        <button
+          onClick={() => setIsTradeModalOpen(true)}
+          className="mt-4 w-full flex items-center gap-2 rounded-lg px-3 py-2 bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700/50 text-sm"
+        >
+          <Plus className="h-4 w-4" />
+          Nuevo Trade
+        </button>
 
         <nav className="mt-6 flex flex-1 flex-col">
           <div className="space-y-1">
@@ -124,6 +136,12 @@ export function Sidebar() {
           </DropdownMenu>
         </div>
       </div>
+
+      <TradeModal
+        isOpen={isTradeModalOpen}
+        onClose={() => setIsTradeModalOpen(false)}
+        onSuccess={() => {}}
+      />
     </div>
   );
 } 
