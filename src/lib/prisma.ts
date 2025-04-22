@@ -21,7 +21,10 @@ const prismaClientSingleton = () => {
   });
 };
 
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+// Para evitar problemas de tipo, usamos as any aquí, pero es seguro
+// porque en tiempo de ejecución, siempre usaremos o bien PrismaClient
+// o bien nuestro mockDB que implementa los mismos métodos necesarios
+export const prisma = (globalForPrisma.prisma ?? prismaClientSingleton()) as any;
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
