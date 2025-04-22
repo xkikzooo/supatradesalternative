@@ -105,71 +105,46 @@ export async function POST(req: Request) {
 
     console.log('Datos a insertar:', tradeData);
 
-    const trade = await prisma.trade.create({
-      data: tradeData,
-      include: {
-        tradingPair: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    // Actualizar el balance de la cuenta
-    if (data.accountId) {
-      await prisma.tradingAccount.update({
-        where: {
-          id: data.accountId,
-        },
-        data: {
-          balance: {
-            increment: data.result === 'LOSS' ? -Math.abs(Number(data.pnl)) : Number(data.pnl),
+    // Usar transacción para asegurar que tanto la creación del trade como la actualización 
+    // del balance se realicen juntas, o ninguna se realice
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Crear el trade
+      const trade = await tx.trade.create({
+        data: tradeData,
+        include: {
+          tradingPair: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
       });
-    }
 
-    console.log('Trade creado:', trade);
-    return NextResponse.json(trade);
-  } catch (err: any) {
-    // Log detallado del error
-    const errorDetails = {
-      message: err?.message || 'Error desconocido',
-      name: err?.name || 'Error',
-      stack: err?.stack || '',
-      cause: err?.cause || null
-    };
-    
-    console.error('Error detallado al crear trade:', errorDetails);
-
-    // Si es un error de Prisma, dar un mensaje más específico
-    if (err?.name === 'PrismaClientKnownRequestError') {
-      // Error de clave foránea
-      if (err.code === 'P2003') {
-        return NextResponse.json(
-          { error: 'Error de referencia: Uno de los campos referenciados no existe' },
-          { status: 400 }
-        );
+      // 2. Actualizar el balance de LA CUENTA ESPECÍFICA seleccionada
+      if (data.accountId) {
+        const pnlValue = data.result === 'LOSS' ? -Math.abs(Number(data.pnl)) : Number(data.pnl);
+        await tx.tradingAccount.update({
+          where: {
+            id: data.accountId,
+          },
+          data: {
+            balance: {
+              increment: pnlValue,
+            },
+          },
+        });
       }
-      
-      // Error de validación
-      if (err.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'Error de validación: Ya existe un registro con estos datos' },
-          { status: 400 }
-        );
-      }
-      
-      return NextResponse.json(
-        { error: 'Error de validación en los datos del trade: ' + err.message },
-        { status: 400 }
-      );
-    }
 
+      return trade;
+    });
+
+    console.log('Trade creado:', result);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error al crear trade:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor: ' + errorDetails.message },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }

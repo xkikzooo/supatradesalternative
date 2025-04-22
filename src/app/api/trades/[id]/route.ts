@@ -87,7 +87,7 @@ export async function PUT(
       );
     }
 
-    // Verificar que el trading pair existe y pertenece al usuario
+    // Verificar que el trading pair existe
     const tradingPair = await prisma.tradingPair.findFirst({
       where: {
         id: tradingPairId,
@@ -96,19 +96,19 @@ export async function PUT(
 
     if (!tradingPair) {
       return NextResponse.json(
-        { error: 'Par de trading no encontrado o no autorizado' },
+        { error: 'Par de trading no encontrado' },
         { status: 404 }
       );
     }
 
-    // Si el trade ya existía, revertir su impacto en el balance
-    if (existingTrade) {
-      const oldPnl = existingTrade.pnl;
-      const oldResult = existingTrade.result;
-      
-      // Revertir el impacto del trade anterior
+    // Usar transacción para garantizar atomicidad en la operación
+    const updatedTrade = await prisma.$transaction(async (tx) => {
+      // 1. Si el trade ya existía, revertir su impacto en la cuenta anterior
       if (existingTrade.accountId) {
-        await prisma.tradingAccount.update({
+        const oldPnl = existingTrade.pnl;
+        const oldResult = existingTrade.result;
+        
+        await tx.tradingAccount.update({
           where: {
             id: existingTrade.accountId,
           },
@@ -119,47 +119,49 @@ export async function PUT(
           },
         });
       }
-    }
 
-    // Actualizar el balance con el nuevo PnL
-    if (accountId) {
-      await prisma.tradingAccount.update({
+      // 2. Actualizar el balance de la cuenta específica seleccionada para este trade
+      if (accountId) {
+        const pnlValue = result === 'LOSS' ? -Math.abs(Number(pnl)) : Number(pnl);
+        await tx.tradingAccount.update({
+          where: {
+            id: accountId,
+          },
+          data: {
+            balance: {
+              increment: pnlValue,
+            },
+          },
+        });
+      }
+
+      // 3. Actualizar el trade
+      return await tx.trade.update({
         where: {
-          id: accountId,
+          id: params.id,
         },
         data: {
-          balance: {
-            increment: result === 'LOSS' ? -Math.abs(Number(pnl)) : Number(pnl),
+          tradingPairId,
+          direction,
+          bias,
+          biasExplanation,
+          psychology,
+          result,
+          pnl: result === 'LOSS' ? -Math.abs(Number(pnl)) : Number(pnl),
+          riskAmount,
+          images: images || [],
+          date: new Date(date),
+          accountId,
+        },
+        include: {
+          tradingPair: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
       });
-    }
-
-    const updatedTrade = await prisma.trade.update({
-      where: {
-        id: params.id,
-      },
-      data: {
-        tradingPairId,
-        direction,
-        bias,
-        biasExplanation,
-        psychology,
-        result,
-        pnl: result === 'LOSS' ? -Math.abs(Number(pnl)) : Number(pnl),
-        riskAmount,
-        images: images || [],
-        date: new Date(date),
-        accountId,
-      },
-      include: {
-        tradingPair: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
     });
 
     return NextResponse.json(updatedTrade);
@@ -206,24 +208,28 @@ export async function DELETE(
       );
     }
 
-    // Revertir el PnL de la cuenta
-    if (trade.accountId && trade.account) {
-      await prisma.tradingAccount.update({
-        where: {
-          id: trade.accountId,
-        },
-        data: {
-          balance: {
-            increment: trade.result === 'LOSS' ? Math.abs(trade.pnl) : -trade.pnl,
+    // Usar transacción para revertir el PnL y eliminar el trade de forma atómica
+    await prisma.$transaction(async (tx) => {
+      // 1. Revertir el PnL de la cuenta específica
+      if (trade.accountId) {
+        await tx.tradingAccount.update({
+          where: {
+            id: trade.accountId,
           },
+          data: {
+            balance: {
+              increment: trade.result === 'LOSS' ? Math.abs(trade.pnl) : -trade.pnl,
+            },
+          },
+        });
+      }
+
+      // 2. Eliminar el trade
+      await tx.trade.delete({
+        where: {
+          id: params.id,
         },
       });
-    }
-
-    await prisma.trade.delete({
-      where: {
-        id: params.id,
-      },
     });
 
     return NextResponse.json({ success: true });
