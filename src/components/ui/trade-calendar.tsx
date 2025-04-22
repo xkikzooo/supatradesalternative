@@ -153,8 +153,13 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
 
       <div className="text-lg font-medium mb-4">
         PnL Mensual: <span className={cn(
-          monthlyPnL > 0 ? "text-green-400" : monthlyPnL < 0 ? "text-red-400" : "text-gray-400"
-        )}>{formatPnL(monthlyPnL)}</span>
+          monthlyPnL > 0 ? "text-green-400" : 
+          monthlyPnL < 0 ? "text-red-400" : 
+          trades.filter(trade => isSameMonth(new Date(trade.date), currentMonth)).length > 0 ? "text-yellow-400" : "text-gray-400"
+        )}>
+          {monthlyPnL !== 0 ? formatPnL(monthlyPnL) : 
+           trades.filter(trade => isSameMonth(new Date(trade.date), currentMonth)).length > 0 ? "Breakeven" : "$0"}
+        </span>
       </div>
 
       <div className="grid grid-cols-8 gap-4">
@@ -194,7 +199,9 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                           "min-h-[100px] p-3 border rounded-lg relative cursor-pointer",
                           isCurrentMonth ? "border-gray-800" : "border-gray-800/50",
                           "hover:bg-gray-800/50 transition-colors",
-                          dayPnL > 0 ? "bg-green-900/20" : dayPnL < 0 ? "bg-red-900/20" : "bg-gray-900/50",
+                          dayPnL > 0 ? "bg-green-900/20" : 
+                          dayPnL < 0 ? "bg-red-900/20" : 
+                          tradesCount > 0 ? "bg-yellow-900/20" : "bg-gray-900/50",
                           !isCurrentMonth && "opacity-50",
                           isToday && "ring-[1px] ring-white/30 ring-offset-2 ring-offset-black shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all duration-300"
                         )}
@@ -206,12 +213,16 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                           )}>{format(day, 'd')}</span>
                         </div>
                         <div className="h-full flex flex-col items-center justify-center">
-                          {dayPnL !== 0 && (
+                          {dayPnL !== 0 ? (
                             <div className={cn(
                               "text-base font-semibold",
                               dayPnL > 0 ? "text-green-400" : "text-red-400"
                             )}>
                               {formatPnL(dayPnL)}
+                            </div>
+                          ) : tradesCount > 0 && (
+                            <div className="text-base font-semibold text-yellow-400">
+                              Breakeven
                             </div>
                           )}
                         </div>
@@ -266,14 +277,28 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
               })}
               <div className={cn(
                 "min-h-[100px] p-3 border border-gray-800 rounded-lg flex flex-col justify-center items-center",
-                weekPnL > 0 ? "bg-green-900/20" : weekPnL < 0 ? "bg-red-900/20" : "bg-gray-900/50"
+                weekPnL > 0 ? "bg-green-900/20" : 
+                weekPnL < 0 ? "bg-red-900/20" : 
+                trades.filter(trade => {
+                  const tradeDate = new Date(trade.date);
+                  return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 1 });
+                }).length > 0 ? "bg-yellow-900/20" : "bg-gray-900/50"
               )}>
-                <div className={cn(
-                  "text-sm font-medium",
-                  weekPnL > 0 ? "text-green-400" : "text-red-400"
-                )}>
-                  {formatPnL(weekPnL)}
-                </div>
+                {weekPnL !== 0 ? (
+                  <div className={cn(
+                    "text-sm font-medium",
+                    weekPnL > 0 ? "text-green-400" : "text-red-400"
+                  )}>
+                    {formatPnL(weekPnL)}
+                  </div>
+                ) : trades.filter(trade => {
+                  const tradeDate = new Date(trade.date);
+                  return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 1 });
+                }).length > 0 && (
+                  <div className="text-sm font-medium text-yellow-400">
+                    Breakeven
+                  </div>
+                )}
                 <div className="text-xs text-gray-400 mt-1">
                   {trades.filter(trade => {
                     const tradeDate = new Date(trade.date);

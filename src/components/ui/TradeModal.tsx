@@ -13,11 +13,10 @@ import { TagSelector } from './tag-selector';
 import { showToast } from '@/lib/toast';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar as CalendarIcon, X, Plus, Trash2 } from "lucide-react";
-import { DayPicker } from "react-day-picker";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { X, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface TradeModalProps {
   isOpen: boolean;
@@ -489,47 +488,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
 
             <div className="space-y-2">
               <Label>Fecha</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      "bg-gradient-to-b from-[#0A0A0A] to-[#111111]",
-                      "border-white/[0.05] shadow-[0_0_1px_rgba(0,0,0,0.5)]",
-                      "hover:bg-[#1A1A1A]/50 hover:border-white/[0.08]",
-                      "transition-all duration-200",
-                      !date && "text-gray-500"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                    {date ? (
-                      <span className="bg-gradient-to-r from-gray-100 to-gray-300 bg-clip-text text-transparent">
-                        {format(date, "PPP", { locale: es })}
-                      </span>
-                    ) : (
-                      <span>Selecciona una fecha</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent 
-                  className={cn(
-                    "w-auto p-0",
-                    "bg-gradient-to-b from-[#0A0A0A] to-[#111111]",
-                    "border border-white/[0.05] shadow-[0_0_1px_rgba(0,0,0,0.5)]",
-                    "backdrop-blur-xl rounded-xl"
-                  )} 
-                  align="start"
-                >
-                  <DayPicker
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    locale={es}
-                    className="bg-transparent"
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker date={date} setDate={setDate} />
             </div>
 
             <div className="space-y-2">

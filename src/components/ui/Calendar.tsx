@@ -26,7 +26,7 @@ function Calendar({
         month: "space-y-4",
         caption: "flex justify-between pt-1 relative items-center px-1 mb-2",
         caption_label: cn(
-          "text-sm font-medium bg-gradient-to-r from-gray-100 to-gray-300 bg-clip-text text-transparent",
+          "text-sm font-medium bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent",
           "tracking-wide uppercase"
         ),
         nav: "flex items-center space-x-1",
@@ -52,17 +52,19 @@ function Calendar({
           "h-9 w-9 p-0 font-normal text-sm rounded-md transition-all duration-200",
           "hover:bg-[#1A1A1A]/50 hover:text-gray-100",
           "focus:outline-none focus:ring-2 focus:ring-[#3A3A3A] focus:ring-offset-2 focus:ring-offset-[#0A0A0A]",
-          "aria-selected:bg-gradient-to-b aria-selected:from-[#2A2A2A] aria-selected:to-[#3A3A3A]",
           "hover:scale-110 active:scale-95"
         ),
         day_selected: cn(
-          "bg-gradient-to-b from-[#2A2A2A] to-[#3A3A3A] text-gray-100",
-          "hover:from-[#3A3A3A] hover:to-[#4A4A4A]",
-          "shadow-lg shadow-black/10"
+          "bg-gradient-to-br from-purple-500/80 to-blue-500/80 text-white",
+          "hover:from-purple-600/80 hover:to-blue-600/80",
+          "shadow-lg shadow-purple-500/20",
+          "font-medium tracking-wide"
         ),
         day_today: cn(
-          "text-gray-100 font-medium",
-          "ring-2 ring-[#3A3A3A] ring-offset-1 ring-offset-[#0A0A0A]"
+          "text-white font-medium",
+          "ring-2 ring-yellow-400/50 ring-offset-1 ring-offset-[#0A0A0A]",
+          "before:absolute before:h-1 before:w-1 before:rounded-full before:bg-yellow-400/70",
+          "before:bottom-1 before:left-1/2 before:-translate-x-1/2"
         ),
         day_outside: cn(
           "text-gray-600 opacity-50",

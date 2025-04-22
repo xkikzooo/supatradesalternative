@@ -2,12 +2,23 @@
 
 import { TradeCard } from "@/components/ui/TradeCard";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Trash2, Check, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { TradeModal } from "@/components/ui/TradeModal";
 import { showToast } from "@/lib/toast";
 import { TradeFilter } from "@/components/ui/trade-filter";
 import { startOfToday, startOfWeek, startOfMonth, isAfter } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Trade {
   id: string;
@@ -36,6 +47,9 @@ export default function TradesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [filterValue, setFilterValue] = useState('all');
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const fetchTrades = async () => {
     try {
@@ -107,6 +121,65 @@ export default function TradesPage() {
     }
   };
 
+  const handleSelectTrade = (id: string, isSelected: boolean) => {
+    setSelectedTrades(prev => {
+      if (isSelected) {
+        return [...prev, id];
+      } else {
+        return prev.filter(tradeId => tradeId !== id);
+      }
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    setIsDeleteDialogOpen(false);
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Mostrar mensaje de inicio
+    toast('Eliminando ' + selectedTrades.length + ' trades...');
+    
+    // Eliminar cada trade seleccionado
+    for (const id of selectedTrades) {
+      try {
+        const response = await fetch(`/api/trades/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      } catch (error) {
+        console.error(`Error al eliminar trade ${id}:`, error);
+        errorCount++;
+      }
+    }
+    
+    // Mostrar resultados
+    if (errorCount === 0) {
+      showToast(`${successCount} trades eliminados correctamente`, "success");
+    } else if (successCount === 0) {
+      showToast(`Error al eliminar los trades`, "error");
+    } else {
+      showToast(`${successCount} trades eliminados, ${errorCount} errores`, "warning");
+    }
+    
+    // Refrescar la lista y limpiar selección
+    fetchTrades();
+    setSelectedTrades([]);
+    setSelectionMode(false);
+  };
+
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      setSelectedTrades([]);
+    }
+    setSelectionMode(!selectionMode);
+  };
+
   const handleModalSuccess = () => {
     fetchTrades();
   };
@@ -120,13 +193,46 @@ export default function TradesPage() {
             Aquí puedes ver y gestionar todos tus trades registrados.
           </p>
         </div>
-        <Button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white rounded-lg px-4 py-2 h-10 font-medium border border-gray-800/50 hover:border-gray-700/50 transition-all flex items-center gap-2"
-        >
-          <Plus className="h-5 w-5" />
-          Nuevo Trade
-        </Button>
+        <div className="flex gap-2">
+          {selectionMode ? (
+            <>
+              <Button 
+                onClick={toggleSelectionMode}
+                variant="outline"
+                className="border-gray-800 hover:bg-gray-800"
+              >
+                <X className="h-5 w-5 mr-1" />
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => setIsDeleteDialogOpen(true)}
+                variant="destructive"
+                disabled={selectedTrades.length === 0}
+                className="hover:bg-red-600"
+              >
+                <Trash2 className="h-5 w-5 mr-1" />
+                Eliminar ({selectedTrades.length})
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                onClick={toggleSelectionMode}
+                className="bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white rounded-lg px-4 py-2 h-10 font-medium border border-gray-800/50 hover:border-gray-700/50 transition-all flex items-center gap-2"
+              >
+                <Check className="h-5 w-5" />
+                Seleccionar
+              </Button>
+              <Button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white rounded-lg px-4 py-2 h-10 font-medium border border-gray-800/50 hover:border-gray-700/50 transition-all flex items-center gap-2"
+              >
+                <Plus className="h-5 w-5" />
+                Nuevo Trade
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-between items-center">
@@ -152,6 +258,9 @@ export default function TradesPage() {
               {...trade}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              selectionMode={selectionMode}
+              isSelected={selectedTrades.includes(trade.id)}
+              onSelectChange={handleSelectTrade}
             />
           ))}
         </div>
@@ -162,6 +271,28 @@ export default function TradesPage() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleModalSuccess}
       />
+
+      {/* Diálogo de confirmación para eliminación múltiple */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg">Eliminar trades seleccionados</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que quieres eliminar {selectedTrades.length} {selectedTrades.length === 1 ? 'trade' : 'trades'}?
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSelected}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from '@/lib/utils';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TradeCardProps {
   id: string;
@@ -46,6 +47,9 @@ interface TradeCardProps {
   };
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  isSelected?: boolean;
+  onSelectChange?: (id: string, isSelected: boolean) => void;
+  selectionMode?: boolean;
 }
 
 export function TradeCard({
@@ -59,7 +63,10 @@ export function TradeCard({
   direction,
   account,
   onEdit,
-  onDelete
+  onDelete,
+  isSelected = false,
+  onSelectChange,
+  selectionMode = false
 }: TradeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,8 +120,22 @@ export function TradeCard({
   return (
     <>
       <div className="rounded-lg border border-gray-800 bg-black/50 p-4 space-y-2">
-        <div className="text-xs text-gray-400">
-          {format(new Date(date), 'dd/MM/yyyy', { locale: es })}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {selectionMode && (
+              <Checkbox 
+                checked={isSelected} 
+                onCheckedChange={(checked: boolean | 'indeterminate') => onSelectChange?.(id, checked === true)}
+                className="mr-2"
+              />
+            )}
+            <span className="text-xs text-gray-400">
+              {format(new Date(date), 'dd/MM/yyyy', { locale: es })}
+            </span>
+          </div>
+          {selectionMode && isSelected && (
+            <span className="text-xs text-blue-400">Seleccionado</span>
+          )}
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
