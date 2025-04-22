@@ -107,7 +107,7 @@ export async function POST(req: Request) {
 
     // Usar transacción para asegurar que tanto la creación del trade como la actualización 
     // del balance se realicen juntas, o ninguna se realice
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Crear el trade
       const trade = await tx.trade.create({
         data: tradeData,

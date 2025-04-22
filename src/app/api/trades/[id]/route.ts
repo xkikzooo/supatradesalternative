@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 export async function PUT(
   req: Request,
@@ -102,7 +103,7 @@ export async function PUT(
     }
 
     // Usar transacción para garantizar atomicidad en la operación
-    const updatedTrade = await prisma.$transaction(async (tx) => {
+    const updatedTrade = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Si el trade ya existía, revertir su impacto en la cuenta anterior
       if (existingTrade.accountId) {
         const oldPnl = existingTrade.pnl;
@@ -209,7 +210,7 @@ export async function DELETE(
     }
 
     // Usar transacción para revertir el PnL y eliminar el trade de forma atómica
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Revertir el PnL de la cuenta específica
       if (trade.accountId) {
         await tx.tradingAccount.update({

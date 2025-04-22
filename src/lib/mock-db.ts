@@ -337,27 +337,31 @@ class MockDB {
       },
       include?: any
     } = {}) => {
-      let foundTrade = null;
+      let foundTrade: Trade | null = null;
       
       if (where?.id) {
-        foundTrade = this.trades.find(trade => trade.id === where.id);
+        const trade = this.trades.find(trade => trade.id === where.id);
+        if (trade) foundTrade = trade;
         
         // Si hay condición de account.userId, verificar que el trade pertenece a ese usuario
         if (foundTrade && where.account?.userId) {
           const account = this.tradingAccounts.find(a => 
-            a.id === foundTrade?.accountId && a.userId === where.account.userId
+            a.id === foundTrade!.accountId && a.userId === where.account?.userId
           );
           if (!account) foundTrade = null;
         }
       }
       
-      if (!foundTrade) return null;
+      if (!foundTrade) {
+        return null;
+      }
+      
+      // En este punto sabemos que foundTrade no es null
+      const result: any = { ...foundTrade };
       
       if (include) {
-        const result: any = { ...foundTrade };
-        
         if (include.tradingPair) {
-          const pair = this.tradingPairs.find(p => p.id === foundTrade?.tradingPairId);
+          const pair = this.tradingPairs.find(p => p.id === foundTrade.tradingPairId);
           result.tradingPair = pair ? { 
             id: pair.id, 
             name: pair.name 
@@ -365,7 +369,7 @@ class MockDB {
         }
         
         if (include.account) {
-          const account = this.tradingAccounts.find(a => a.id === foundTrade?.accountId);
+          const account = this.tradingAccounts.find(a => a.id === foundTrade.accountId);
           result.account = account ? { 
             id: account.id, 
             name: account.name,
