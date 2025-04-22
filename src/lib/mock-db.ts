@@ -226,6 +226,9 @@ class MockDB {
         (!where.userId || account.userId === where.userId)
       );
     },
+    findUnique: async ({ where }: { where: { id?: string } }) => {
+      return this.tradingAccounts.find(account => account.id === where.id);
+    },
     create: async ({ data }: { data: Partial<TradingAccount> }) => {
       const id = `account-${Date.now()}`;
       const newAccount = {
@@ -260,6 +263,14 @@ class MockDB {
           updatedAt: new Date()
         };
         return this.tradingAccounts[index];
+      }
+      return null;
+    },
+    delete: async ({ where }: { where: { id: string } }) => {
+      const index = this.tradingAccounts.findIndex(account => account.id === where.id);
+      if (index !== -1) {
+        const deleted = this.tradingAccounts.splice(index, 1)[0];
+        return deleted;
       }
       return null;
     }
