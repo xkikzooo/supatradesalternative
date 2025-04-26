@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ImageIcon, Loader2 } from 'lucide-react';
+import { ImageIcon, Loader2, Clipboard } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@supabase/supabase-js';
 
@@ -13,6 +13,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+// Máximo número de imágenes permitidas
+const MAX_IMAGES = 4;
 
 interface ImageDropzoneProps {
   images: string[];
@@ -30,25 +33,47 @@ export function ImageDropzone({
   onRemoveExistingImage
 }: ImageDropzoneProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [dropzoneRef, setDropzoneRef] = useState<HTMLDivElement | null>(null);
+  
+  // Calcular cuántas imágenes más se pueden agregar
+  const remainingSlots = MAX_IMAGES - (images.length + existingImages.length);
+  const isMaxImagesReached = remainingSlots <= 0;
+
+  const processFile = useCallback(async (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = reject;
+    });
+  }, []);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
+    
+    // Verificar si hay espacio para más imágenes
+    if (isMaxImagesReached) {
+      toast.error(`Límite de ${MAX_IMAGES} imágenes alcanzado`);
+      return;
+    }
+    
+    // Limitar la cantidad de archivos a procesar según el espacio disponible
+    const filesToProcess = acceptedFiles.slice(0, remainingSlots);
+    
+    // Mostrar advertencia si se descartaron archivos
+    if (filesToProcess.length < acceptedFiles.length) {
+      toast.warning(`Solo se procesarán ${filesToProcess.length} de ${acceptedFiles.length} imágenes debido al límite de ${MAX_IMAGES} imágenes`);
+    }
 
     setIsUploading(true);
     const uploadedUrls: string[] = [];
 
     try {
-      // Aquí iría la lógica de subida de archivos
-      // Por ahora solo simulamos la subida
-      for (const file of acceptedFiles) {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        await new Promise((resolve) => {
-          reader.onload = () => {
-            uploadedUrls.push(reader.result as string);
-            resolve(null);
-          };
-        });
+      for (const file of filesToProcess) {
+        const dataUrl = await processFile(file);
+        uploadedUrls.push(dataUrl);
       }
 
       if (uploadedUrls.length > 0) {
@@ -60,24 +85,87 @@ export function ImageDropzone({
     } finally {
       setIsUploading(false);
     }
-  }, [onAddImages]);
+  }, [onAddImages, processFile, isMaxImagesReached, remainingSlots]);
+
+  // Manejar pegado de imágenes
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      if (!dropzoneRef || isUploading) return;
+      
+      // Verificar si hay espacio para más imágenes
+      if (isMaxImagesReached) {
+        toast.error(`Límite de ${MAX_IMAGES} imágenes alcanzado`);
+        return;
+      }
+      
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      
+      const imageItems = Array.from(items).filter(item => 
+        item.type.startsWith('image/')
+      );
+      
+      if (imageItems.length === 0) return;
+      
+      // Limitar la cantidad de imágenes a procesar según el espacio disponible
+      const itemsToProcess = imageItems.slice(0, remainingSlots);
+      
+      e.preventDefault();
+      setIsUploading(true);
+      
+      try {
+        const uploadedUrls: string[] = [];
+        
+        for (const item of itemsToProcess) {
+          const file = item.getAsFile();
+          if (file) {
+            const dataUrl = await processFile(file);
+            uploadedUrls.push(dataUrl);
+          }
+        }
+        
+        if (uploadedUrls.length > 0) {
+          toast.success(`${uploadedUrls.length > 1 ? 'Imágenes pegadas' : 'Imagen pegada'} correctamente`);
+          onAddImages(uploadedUrls);
+        }
+      } catch (error) {
+        console.error('Error al pegar imágenes:', error);
+        toast.error('Error al pegar imágenes');
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    
+    // Añadir evento de paste al documento para capturar en cualquier lugar
+    document.addEventListener('paste', handlePaste);
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [dropzoneRef, isUploading, onAddImages, processFile, isMaxImagesReached, remainingSlots]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif']
+      'image/*': ['.png', '.jpg', '.jpeg']
     },
-    multiple: true
+    multiple: true,
+    disabled: isMaxImagesReached || isUploading
+  });
+
+  // Obtener props del dropzone con un ref personalizado
+  const rootProps = getRootProps({
+    ref: (node: HTMLDivElement) => setDropzoneRef(node)
   });
 
   return (
     <div className="space-y-4">
       <div
-        {...getRootProps()}
+        {...rootProps}
         className={cn(
           "border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer",
           isDragActive ? "border-blue-500 bg-blue-50/10" : "border-gray-300 hover:border-gray-400",
-          isUploading && "pointer-events-none opacity-50"
+          (isUploading || isMaxImagesReached) && "pointer-events-none opacity-50"
         )}
       >
         <input {...getInputProps()} />
@@ -86,6 +174,13 @@ export function ImageDropzone({
             <div className="flex flex-col items-center">
               <Loader2 className="h-10 w-10 animate-spin text-gray-400" />
               <p className="mt-2 text-sm text-gray-500">Subiendo imágenes...</p>
+            </div>
+          ) : isMaxImagesReached ? (
+            <div className="flex flex-col items-center">
+              <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-500">
+                Límite de {MAX_IMAGES} imágenes alcanzado. Elimina alguna para añadir más.
+              </p>
             </div>
           ) : (
             <>
@@ -98,8 +193,19 @@ export function ImageDropzone({
                   o arrastra y suelta
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  PNG, JPG, GIF hasta 10MB
+                  PNG, JPG hasta 10MB (máximo {MAX_IMAGES} imágenes)
                 </p>
+                <div className="flex items-center justify-center mt-2">
+                  <Clipboard className="h-4 w-4 text-gray-400 mr-1" />
+                  <p className="text-xs text-gray-500">
+                    También puedes pegar una imagen desde el portapapeles (Ctrl+V)
+                  </p>
+                </div>
+                {remainingSlots > 0 && (images.length > 0 || existingImages.length > 0) && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Puedes agregar {remainingSlots} imagen{remainingSlots !== 1 ? 'es' : ''} más
+                  </p>
+                )}
               </div>
             </>
           )}
