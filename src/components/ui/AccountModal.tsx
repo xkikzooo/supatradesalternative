@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,14 +28,38 @@ export function AccountModal({ isOpen, onClose, onSuccess, initialData }: Accoun
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    balance: initialData?.balance?.toString() || '',
-    initialBalance: initialData?.initialBalance?.toString() || '',
-    broker: initialData?.broker || '',
-    type: initialData?.type || '',
-    currency: initialData?.currency || '',
-    riskPerTrade: initialData?.riskPerTrade || '',
+    name: '',
+    balance: '',
+    initialBalance: '',
+    broker: '',
+    type: '',
+    currency: '',
+    riskPerTrade: '',
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        balance: initialData.balance?.toString() || '',
+        initialBalance: initialData.initialBalance?.toString() || '',
+        broker: initialData.broker || '',
+        type: initialData.type || '',
+        currency: initialData.currency || '',
+        riskPerTrade: initialData.riskPerTrade || '',
+      });
+    } else if (isOpen) {
+      setFormData({
+        name: '',
+        balance: '',
+        initialBalance: '',
+        broker: '',
+        type: '',
+        currency: '',
+        riskPerTrade: '',
+      });
+    }
+  }, [initialData, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

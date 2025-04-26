@@ -150,7 +150,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -160,11 +160,23 @@ export async function GET() {
         { status: 401 }
       );
     }
+    
+    // Obtener el accountId del parámetro de consulta si existe
+    const url = new URL(req.url);
+    const accountId = url.searchParams.get('accountId');
+    
+    // Construir la condición where
+    const whereCondition: any = {
+      userId: session.user.id,
+    };
+    
+    // Si existe accountId, filtrar por esa cuenta específica
+    if (accountId) {
+      whereCondition.accountId = accountId;
+    }
 
     const trades = await prisma.trade.findMany({
-      where: {
-        userId: session.user.id,
-      },
+      where: whereCondition,
       orderBy: {
         date: 'desc',
       },

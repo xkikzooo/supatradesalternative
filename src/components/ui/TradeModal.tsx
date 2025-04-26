@@ -110,6 +110,22 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       if (initialData.date) {
         setDate(new Date(initialData.date));
       }
+    } else if (isOpen) {
+      // Resetear el formulario cuando se abre para crear un nuevo trade
+      setFormData({
+        tradingPairId: '',
+        direction: 'LONG',
+        bias: 'NEUTRAL',
+        biasExplanation: '',
+        psychology: '',
+        result: 'WIN',
+        pnl: '0',
+        riskAmount: 0,
+        images: [],
+        date: new Date().toISOString().split('T')[0],
+        accountId: '',
+      });
+      setDate(new Date());
     }
   }, [initialData, isOpen]);
 
@@ -546,7 +562,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
               <Label>Imágenes</Label>
               <ImageDropzone
                 images={formData.images}
-                existingImages={initialData?.images || []}
+                existingImages={[]}
                 onAddImages={(urls) => {
                   setFormData((prev) => ({
                     ...prev,
@@ -560,12 +576,8 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
                   }));
                 }}
                 onRemoveExistingImage={(index) => {
-                  if (initialData) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      images: initialData.images.filter((_, i) => i !== index),
-                    }));
-                  }
+                  // Este método ya no se usará pero lo dejamos por compatibilidad
+                  console.log("onRemoveExistingImage no se utiliza");
                 }}
               />
             </div>
