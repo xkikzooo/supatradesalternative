@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { TradeModal } from "@/components/ui/TradeModal";
 import { showToast } from "@/lib/toast";
 import { TradeFilter } from "@/components/ui/trade-filter";
-import { startOfToday, startOfWeek, startOfMonth, isAfter } from "date-fns";
+import { startOfToday, startOfWeek, startOfMonth, isAfter, endOfMonth } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,6 +82,19 @@ export default function TradesPage() {
 
       const filtered = trades.filter(trade => {
         const tradeDate = new Date(trade.date);
+        
+        // Si el valor comienza con 'month_', es un mes específico
+        if (filterValue.startsWith('month_')) {
+          const [yearStr, monthStr] = filterValue.replace('month_', '').split('-');
+          const year = parseInt(yearStr);
+          const month = parseInt(monthStr) - 1; // Meses en JS son 0-indexed
+          
+          const filterMonthStart = new Date(year, month, 1);
+          const filterMonthEnd = endOfMonth(filterMonthStart);
+          
+          return tradeDate >= filterMonthStart && tradeDate <= filterMonthEnd;
+        }
+        
         switch (filterValue) {
           case 'today':
             return isAfter(tradeDate, today);

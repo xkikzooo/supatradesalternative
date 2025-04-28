@@ -26,6 +26,7 @@ interface Trade {
     type: string;
     initialBalance?: number;
   };
+  pnlPercentage?: number;
 }
 
 interface TradeCalendarProps {
@@ -38,6 +39,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
 
+  const [displayMode, setDisplayMode] = useState<'money' | 'percentage'>('money');
   const [monthlyPnL, setMonthlyPnL] = useState(0);
   const [weeklyPnLs, setWeeklyPnLs] = useState<{ [key: string]: number }>({});
   const [dailyPnLs, setDailyPnLs] = useState<{ [key: string]: number }>({});
@@ -47,8 +49,20 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
 
+    // Procesar porcentajes si es necesario
+    const tradesWithPercentage = trades.map(trade => {
+      let pnlPercentage = 0;
+      if (trade.account?.initialBalance) {
+        pnlPercentage = (trade.pnl / trade.account.initialBalance) * 100;
+      }
+      return {
+        ...trade,
+        pnlPercentage
+      };
+    });
+
     // Calcular PnL mensual
-    const monthlyTotal = trades
+    const monthlyTotal = tradesWithPercentage
       .filter(trade => {
         const tradeDate = new Date(trade.date);
         return isSameMonth(tradeDate, currentMonth);
@@ -57,15 +71,23 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
 
     setMonthlyPnL(monthlyTotal);
 
-    // Calcular PnL diario
+    // Calcular PnL diario para todos los días visibles en el calendario
     const dailyTotals: { [key: string]: number } = {};
-    trades.forEach(trade => {
+    
+    // Obtener el primer día y el último día visibles en el calendario
+    const firstWeekStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const lastWeekEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    
+    // Procesar todos los trades que podrían estar en el rango visible
+    tradesWithPercentage.forEach(trade => {
       const tradeDate = new Date(trade.date);
-      if (isSameMonth(tradeDate, currentMonth)) {
+      if (tradeDate >= firstWeekStart && tradeDate <= lastWeekEnd) {
         const dateKey = format(tradeDate, 'yyyy-MM-dd');
-        dailyTotals[dateKey] = (dailyTotals[dateKey] || 0) + trade.pnl;
+        const value = displayMode === 'money' ? trade.pnl : trade.pnlPercentage || 0;
+        dailyTotals[dateKey] = (dailyTotals[dateKey] || 0) + value;
       }
     });
+    
     setDailyPnLs(dailyTotals);
 
     // Calcular PnL semanal
@@ -73,24 +95,27 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
     
     days.forEach(day => {
-      const weekStart = startOfWeek(day, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(day, { weekStartsOn: 1 });
+      const weekStart = startOfWeek(day, { weekStartsOn: 0 });
+      const weekEnd = endOfWeek(day, { weekStartsOn: 0 });
       const weekKey = format(weekStart, 'yyyy-MM-dd');
 
       if (!weeklyTotals[weekKey]) {
-        const weeklyTotal = trades
+        const weeklyTotal = tradesWithPercentage
           .filter(trade => {
             const tradeDate = new Date(trade.date);
             return tradeDate >= weekStart && tradeDate <= weekEnd;
           })
-          .reduce((sum, trade) => sum + trade.pnl, 0);
+          .reduce((sum, trade) => {
+            const value = displayMode === 'money' ? trade.pnl : trade.pnlPercentage || 0;
+            return sum + value;
+          }, 0);
 
         weeklyTotals[weekKey] = weeklyTotal;
       }
     });
 
     setWeeklyPnLs(weeklyTotals);
-  }, [trades, currentMonth]);
+  }, [trades, currentMonth, displayMode]);
 
   useEffect(() => {
     calculatePnLs();
@@ -103,12 +128,20 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
   };
 
   const formatPnL = (pnl: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(pnl);
+    if (displayMode === 'money') {
+      return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(pnl);
+    } else {
+      return new Intl.NumberFormat('es-ES', {
+        style: 'percent',
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }).format(pnl / 100);
+    }
   };
 
   const formatBalance = (balance: number) => {
@@ -135,19 +168,45 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
         <h2 className="text-2xl font-semibold">
           {format(currentMonth, 'MMMM yyyy', { locale: es }).replace(/^\w/, c => c.toUpperCase())}
         </h2>
-        <div className="flex gap-2">
-          <button
-            onClick={previousMonth}
-            className="p-2 hover:bg-gray-800 rounded-md transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={nextMonth}
-            className="p-2 hover:bg-gray-800 rounded-md transition-colors"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+        <div className="flex gap-4 items-center">
+          <div className="flex border border-gray-700 rounded-md overflow-hidden">
+            <button
+              onClick={() => setDisplayMode('money')}
+              className={cn(
+                "px-3 py-1.5 text-sm",
+                displayMode === 'money' 
+                  ? "bg-gray-700 text-white" 
+                  : "bg-transparent text-gray-400 hover:bg-gray-800"
+              )}
+            >
+              Dinero
+            </button>
+            <button
+              onClick={() => setDisplayMode('percentage')}
+              className={cn(
+                "px-3 py-1.5 text-sm",
+                displayMode === 'percentage' 
+                  ? "bg-gray-700 text-white" 
+                  : "bg-transparent text-gray-400 hover:bg-gray-800"
+              )}
+            >
+              Porcentaje
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={previousMonth}
+              className="p-2 hover:bg-gray-800 rounded-md transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              onClick={nextMonth}
+              className="p-2 hover:bg-gray-800 rounded-md transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -163,7 +222,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
       </div>
 
       <div className="grid grid-cols-8 gap-4">
-        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom', 'Semana'].map((day) => (
+        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Semana'].map((day) => (
           <div key={day} className="text-center text-sm font-medium text-gray-400">
             {day}
           </div>
@@ -173,12 +232,12 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
           start: startOfMonth(currentMonth),
           end: endOfMonth(currentMonth)
         }).map((week) => {
-          const weekStart = startOfWeek(week, { weekStartsOn: 1 });
+          const weekStart = startOfWeek(week, { weekStartsOn: 0 });
           const weekKey = format(weekStart, 'yyyy-MM-dd');
           const weekPnL = weeklyPnLs[weekKey] || 0;
           const weekDays = eachDayOfInterval({
             start: weekStart,
-            end: endOfWeek(week, { weekStartsOn: 1 })
+            end: endOfWeek(week, { weekStartsOn: 0 })
           });
 
           return (
@@ -201,7 +260,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                           "hover:bg-gray-800/50 transition-colors",
                           dayPnL > 0 ? "bg-green-900/20" : 
                           dayPnL < 0 ? "bg-red-900/20" : 
-                          tradesCount > 0 ? "bg-yellow-900/20" : "bg-gray-900/50",
+                          tradesCount > 0 && isCurrentMonth ? "bg-yellow-900/20" : "bg-gray-900/50",
                           !isCurrentMonth && "opacity-50",
                           isToday && "ring-[1px] ring-white/30 ring-offset-2 ring-offset-black shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all duration-300"
                         )}
@@ -220,7 +279,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                             )}>
                               {formatPnL(dayPnL)}
                             </div>
-                          ) : tradesCount > 0 && (
+                          ) : tradesCount > 0 && isCurrentMonth && (
                             <div className="text-base font-semibold text-yellow-400">
                               Breakeven
                             </div>
@@ -281,7 +340,8 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                 weekPnL < 0 ? "bg-red-900/20" : 
                 trades.filter(trade => {
                   const tradeDate = new Date(trade.date);
-                  return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 1 });
+                  return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 0 }) && 
+                         isSameMonth(tradeDate, currentMonth);
                 }).length > 0 ? "bg-yellow-900/20" : "bg-gray-900/50"
               )}>
                 {weekPnL !== 0 ? (
@@ -293,7 +353,8 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                   </div>
                 ) : trades.filter(trade => {
                   const tradeDate = new Date(trade.date);
-                  return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 1 });
+                  return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 0 }) && 
+                         isSameMonth(tradeDate, currentMonth);
                 }).length > 0 && (
                   <div className="text-sm font-medium text-yellow-400">
                     Breakeven
@@ -302,7 +363,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                 <div className="text-xs text-gray-400 mt-1">
                   {trades.filter(trade => {
                     const tradeDate = new Date(trade.date);
-                    return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 1 });
+                    return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 0 });
                   }).length} trades
                 </div>
               </div>
