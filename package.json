@@ -28,6 +28,7 @@
     "@types/nodemailer": "^6.4.17",
     "@uploadthing/react": "^7.3.0",
     "autoprefixer": "^10.4.17",
+    "axios": "^1.9.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.6.0",

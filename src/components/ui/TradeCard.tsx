@@ -208,7 +208,7 @@ export function TradeCard({
         {isExpanded && (
           <div className="space-y-4 pt-4 border-t border-gray-800">
             <div>
-              <p className="text-sm text-gray-400">Sesgo</p>
+              <p className="text-sm text-gray-400">Bias</p>
               <p className="text-white">{bias}</p>
             </div>
             {psychology && (

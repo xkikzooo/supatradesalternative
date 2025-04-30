@@ -3,9 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { formatCurrency } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus, Percent } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Percent, ChevronRight } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { Button } from "@/components/ui/button";
+import { WeeklyCalendar } from "@/components/weekly-calendar";
+import { AccountPreview } from "@/components/account-preview";
+import { RecentTradesTable } from "@/components/recent-trades-table";
 
 interface Trade {
   id: string;
@@ -38,6 +42,7 @@ export default function DashboardPage() {
     losingTrades: 0,
     breakEvenTrades: 0,
   });
+  const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -53,6 +58,9 @@ export default function DashboardPage() {
           throw new Error('Error al cargar los trades');
         }
         const trades: Trade[] = await response.json();
+        
+        // Guardar los trades recientes
+        setRecentTrades(trades.slice(0, 4));
         
         // Obtener fechas para filtrar trades por mes
         const now = new Date();
@@ -131,10 +139,6 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalPnL)}</div>
-            <p className="text-xs text-gray-400">
-              {calculatePercentageChange(stats.pnlThisMonth, stats.pnlLastMonth) > 0 ? '+' : ''}
-              {calculatePercentageChange(stats.pnlThisMonth, stats.pnlLastMonth).toFixed(1)}% vs. mes anterior
-            </p>
           </CardContent>
         </Card>
 
@@ -187,6 +191,59 @@ export default function DashboardPage() {
             <p className="text-xs text-gray-400">
               {((stats.breakEvenTrades / stats.totalTrades) * 100).toFixed(1)}% del total
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Calendario Semanal */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg font-semibold text-white">Semana Actual</CardTitle>
+          <Button 
+            variant="link" 
+            className="text-blue-500 flex items-center gap-1 p-0"
+            onClick={() => router.push('/calendar')}
+          >
+            Ver calendario completo <ChevronRight className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <WeeklyCalendar />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Últimos Trades */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-semibold text-white">Últimos Trades</CardTitle>
+            <Button 
+              variant="link" 
+              className="text-blue-500 flex items-center gap-1 p-0"
+              onClick={() => router.push('/trades')}
+            >
+              Ver todos <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <RecentTradesTable trades={recentTrades} />
+          </CardContent>
+        </Card>
+
+        {/* Cuentas */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-semibold text-white">Mis Cuentas</CardTitle>
+            <Button 
+              variant="link" 
+              className="text-blue-500 flex items-center gap-1 p-0"
+              onClick={() => router.push('/accounts')}
+            >
+              Ver todas <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <AccountPreview />
           </CardContent>
         </Card>
       </div>

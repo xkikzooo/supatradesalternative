@@ -508,7 +508,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
             </div>
 
             <div className="space-y-2">
-              <Label>Sesgo</Label>
+              <Label>Bias</Label>
               <TagSelector
                 value={formData.bias}
                 onChange={(value) =>
@@ -535,7 +535,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
             </div>
 
             <div className="space-y-2">
-              <Label>Explicación del sesgo</Label>
+              <Label>Explicación del bias</Label>
               <Textarea
                 value={formData.biasExplanation}
                 onChange={(e) =>

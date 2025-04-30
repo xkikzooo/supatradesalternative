@@ -40,11 +40,11 @@ export function TradeDetails({ trade }: TradeDetailsProps) {
           <div className="space-y-4 p-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Sesgo</h4>
+                <h4 className="text-sm font-medium text-muted-foreground">Bias</h4>
                 <p className="text-sm">{trade.bias || "No especificado"}</p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Explicación del Sesgo</h4>
+                <h4 className="text-sm font-medium text-muted-foreground">Explicación del Bias</h4>
                 <p className="text-sm">{trade.biasExplanation || "No especificado"}</p>
               </div>
               <div className="col-span-2">
