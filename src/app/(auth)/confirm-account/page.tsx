@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function ConfirmAccountPage() {
+// Componente con la funcionalidad de confirmación
+function ConfirmAccountContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -16,9 +18,8 @@ export default function ConfirmAccountPage() {
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
-    // Obtener el correo electrónico de la URL o sessionStorage
-    const params = new URLSearchParams(window.location.search);
-    const emailParam = params.get('email');
+    // Obtener el correo electrónico de los parámetros de URL
+    const emailParam = searchParams?.get('email') || null;
     
     if (emailParam) {
       setEmail(emailParam);
@@ -43,7 +44,7 @@ export default function ConfirmAccountPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [searchParams]);
 
   const handleVerifyCode = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -216,5 +217,21 @@ export default function ConfirmAccountPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Componente principal que usa Suspense
+export default function ConfirmAccountPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+          <p className="mt-4 text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <ConfirmAccountContent />
+    </Suspense>
   );
 } 

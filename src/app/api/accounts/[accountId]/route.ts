@@ -5,12 +5,12 @@ import { authOptions } from '@/lib/auth';
 
 export async function GET(
   req: Request,
-  context: { params: { accountId: string } }
+  { params }: { params: { accountId: string } }
 ) {
   try {
     const account = await prisma.tradingAccount.findUnique({
       where: {
-        id: context.params.accountId,
+        id: params.accountId,
       },
     });
 
@@ -27,7 +27,7 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  context: { params: { accountId: string } }
+  { params }: { params: { accountId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -45,7 +45,7 @@ export async function PUT(
     // Verificar que la cuenta pertenece al usuario
     const existingAccount = await prisma.tradingAccount.findUnique({
       where: {
-        id: context.params.accountId,
+        id: params.accountId,
       },
     });
 
@@ -58,7 +58,7 @@ export async function PUT(
 
     const account = await prisma.tradingAccount.update({
       where: {
-        id: context.params.accountId,
+        id: params.accountId,
       },
       data: {
         name,
@@ -83,7 +83,7 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  context: { params: { accountId: string } }
+  { params }: { params: { accountId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -98,7 +98,7 @@ export async function DELETE(
     // Verificar que la cuenta pertenece al usuario
     const existingAccount = await prisma.tradingAccount.findUnique({
       where: {
-        id: context.params.accountId,
+        id: params.accountId,
       },
     });
 
@@ -111,7 +111,7 @@ export async function DELETE(
 
     await prisma.tradingAccount.delete({
       where: {
-        id: context.params.accountId,
+        id: params.accountId,
       },
     });
 
