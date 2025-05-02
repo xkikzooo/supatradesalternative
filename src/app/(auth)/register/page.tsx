@@ -58,15 +58,15 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950 px-4 py-8">
       <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          <Image
-            src="/supatrades.svg"
-            alt="Supatrades Logo"
-            width={200}
-            height={60}
-            className="mb-6"
-            priority
-          />
+          <div className="flex flex-col items-center mb-8">
+            <Image
+              src="/supatrades.svg"
+              alt="Supatrades Logo"
+              width={200}
+              height={60}
+              className="mb-6"
+              priority
+            />
           <div className="bg-gray-800/40 backdrop-blur-sm w-full rounded-xl shadow-2xl p-8 border border-gray-800">
             <h2 className="text-2xl font-bold tracking-tight text-white text-center mb-4">
               Crea tu cuenta
@@ -82,93 +82,93 @@ export default function RegisterPage() {
             </p>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
-              {error && (
-                <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-300 mb-1"
-                >
-                  Nombre
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="Tu nombre"
-                />
+            {error && (
+              <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
+                {error}
               </div>
+            )}
 
-              <div>
-                <label
-                  htmlFor="email"
+            <div>
+              <label
+                htmlFor="name"
                   className="block text-sm font-medium text-gray-300 mb-1"
-                >
-                  Correo electrónico
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="tu@email.com"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-300 mb-1"
-                >
-                  Contraseña
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-300 mb-1"
-                >
-                  Confirmar contraseña
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors mt-6"
               >
-                {isLoading ? 'Registrando...' : 'Registrarse'}
-              </button>
-            </form>
-          </div>
+                Nombre
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                required
+                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                placeholder="Tu nombre"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="email"
+                  className="block text-sm font-medium text-gray-300 mb-1"
+              >
+                Correo electrónico
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                placeholder="tu@email.com"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                  className="block text-sm font-medium text-gray-300 mb-1"
+              >
+                Contraseña
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-300 mb-1"
+              >
+                Confirmar contraseña
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+                className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors mt-6"
+            >
+              {isLoading ? 'Registrando...' : 'Registrarse'}
+            </button>
+          </form>
+        </div>
         </div>
       </div>
     </div>
