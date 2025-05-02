@@ -1,4 +1,3 @@
-import { hash } from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { randomInt } from 'crypto';
@@ -24,42 +23,48 @@ function getEmailTransporter() {
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { email } = await req.json();
 
-    if (!email || !password) {
+    if (!email) {
       return NextResponse.json(
-        { error: 'Falta el correo o la contraseña' },
+        { error: 'El correo electrónico es requerido' },
         { status: 400 }
       );
     }
 
-    const existingUser = await prisma.user.findUnique({
+    // Verificar si el usuario existe
+    const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'El usuario ya existe' },
-        { status: 400 }
+        { error: 'Usuario no encontrado' },
+        { status: 404 }
       );
     }
 
-    const hashedPassword = await hash(password, 10);
+    // Verificar si ya está verificado
+    if (user.emailVerified) {
+      return NextResponse.json(
+        { message: 'La cuenta ya ha sido verificada' },
+        { status: 200 }
+      );
+    }
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-    });
-
-    // Generar código de verificación de 6 dígitos
+    // Generar un nuevo código de verificación de 6 dígitos
     const verificationCode = generateVerificationCode();
     const expires = new Date();
     expires.setHours(expires.getHours() + 1); // Válido por 1 hora
 
-    // Guardar el código en la base de datos
+    // Eliminar tokens anteriores para este email
+    await prisma.verificationToken.deleteMany({
+      where: {
+        identifier: email,
+      },
+    });
+
+    // Guardar el nuevo código en la base de datos
     await prisma.verificationToken.create({
       data: {
         identifier: email,
@@ -93,19 +98,14 @@ export async function POST(req: Request) {
       `,
     });
 
-    return NextResponse.json(
-      {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      message: 'Código de verificación enviado correctamente',
+    });
   } catch (error) {
-    console.error('Error al registrar usuario:', error);
+    console.error('Error al reenviar el código de verificación:', error);
     return NextResponse.json(
-      { error: 'Error al crear el usuario' },
+      { error: 'Error al procesar la solicitud' },
       { status: 500 }
     );
   }
-}
+} 
