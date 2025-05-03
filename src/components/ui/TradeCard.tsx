@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, TrendingUp, TrendingDown, X, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, TrendingUp, TrendingDown, X, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from './button';
-import { TradeModal } from './TradeModal';
+// TradeModal eliminado - ahora se usa página completa
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { showToast } from "@/lib/toast";
 import { cn } from '@/lib/utils';
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -68,17 +69,18 @@ export function TradeCard({
   onSelectChange,
   selectionMode = false
 }: TradeCardProps) {
+  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Estado del modal eliminado - ahora se usa página completa
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleDelete = async () => {
     try {
       await onDelete(id);
-      toast.success("Trade eliminado correctamente");
+      showToast("Trade eliminado correctamente", "success");
     } catch (error) {
-      toast.error("Error al eliminar el trade");
+      showToast("Error al eliminar el trade", "error");
       console.error("Error al eliminar:", error);
     }
   };
@@ -188,7 +190,7 @@ export function TradeCard({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[160px]">
-                  <DropdownMenuItem onClick={() => setIsModalOpen(true)}>
+                  <DropdownMenuItem onClick={() => router.push(`/trades/edit/${id}`)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     <span>Editar</span>
                   </DropdownMenuItem>
@@ -241,55 +243,34 @@ export function TradeCard({
 
       {/* Modal de confirmación de eliminación */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-zinc-900 border border-zinc-800 shadow-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertDialogTitle className="flex items-center gap-2 text-zinc-100">
+              <AlertOctagon className="h-6 w-6 text-red-500 animate-pulse" />
               Confirmar eliminación
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-zinc-400">
               ¿Estás seguro de que quieres eliminar este trade de {tradingPair.name}?
               Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 flex items-center gap-1">
+              <X className="h-4 w-4" />
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-red-600 text-zinc-100 hover:bg-red-700 flex items-center gap-1"
             >
+              <Trash2 className="h-4 w-4" />
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal de edición */}
-      <TradeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={() => {
-          setIsModalOpen(false);
-          // Aquí podrías recargar los datos si es necesario
-        }}
-        initialData={{
-          id,
-          tradingPair: {
-            id: tradingPair.id,
-            name: tradingPair.name
-          },
-          direction,
-          bias,
-          biasExplanation: "",
-          psychology,
-          result: pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "BREAKEVEN",
-          pnl,
-          riskAmount: 0,
-          images,
-          date,
-          accountId: account?.id
-        }}
-      />
+      {/* Modal de edición eliminado - ahora se usa una página completa */}
 
       {/* Modal de imagen ampliada */}
       {selectedImage && (

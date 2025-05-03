@@ -20,6 +20,14 @@ interface DatePickerProps {
 }
 
 export function DatePicker({ date, setDate, className }: DatePickerProps) {
+  // Establecer la fecha actual como valor por defecto si no hay fecha seleccionada
+  const today = React.useMemo(() => new Date(), []);
+  const handleDefaultSelection = React.useCallback(() => {
+    if (!date) {
+      setDate(today);
+    }
+  }, [date, setDate, today]);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -27,17 +35,19 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
-            "bg-gradient-to-b from-[#0A0A0A] to-[#111111]",
-            "border-white/[0.05] shadow-[0_0_1px_rgba(0,0,0,0.5)]",
-            "hover:bg-[#1A1A1A]/50 hover:border-white/[0.08]",
+            "bg-gradient-to-b from-gray-900 to-gray-800",
+            "border border-gray-700 shadow-sm",
+            "hover:bg-gradient-to-b hover:from-gray-800 hover:to-gray-700",
+            "hover:border-blue-500/50 hover:shadow-blue-500/20 hover:shadow-md",
             "transition-all duration-200",
             !date && "text-gray-500",
             className
           )}
+          onClick={handleDefaultSelection}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+          <CalendarIcon className="mr-2 h-4 w-4 text-blue-400" />
           {date ? (
-            <span className="bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-medium">
               {format(date, "PPP", { locale: es })}
             </span>
           ) : (
@@ -48,18 +58,19 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
       <PopoverContent 
         className={cn(
           "w-auto p-0",
-          "bg-gradient-to-b from-[#0A0A0A] to-[#111111]",
-          "border border-white/[0.05] shadow-[0_0_1px_rgba(0,0,0,0.5)]",
+          "bg-gradient-to-b from-gray-900 to-gray-800",
+          "border border-gray-700 shadow-md",
           "backdrop-blur-xl rounded-xl"
         )} 
         align="start"
       >
         <Calendar
           mode="single"
-          selected={date}
+          selected={date || today}
           onSelect={setDate}
           locale={es}
           initialFocus
+          defaultMonth={date || today}
         />
       </PopoverContent>
     </Popover>

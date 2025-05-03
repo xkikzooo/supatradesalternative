@@ -253,9 +253,10 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                 return (
                   <Popover key={day.toString()}>
                     <PopoverTrigger asChild>
-                      <div
+                      <button
+                        type="button"
                         className={cn(
-                          "min-h-[100px] p-3 border rounded-lg relative cursor-pointer",
+                          "min-h-[100px] p-3 border rounded-lg relative cursor-pointer w-full text-left",
                           isCurrentMonth ? "border-gray-800" : "border-gray-800/50",
                           "hover:bg-gray-800/50 transition-colors",
                           dayPnL > 0 ? "bg-green-900/20" : 
@@ -290,10 +291,14 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                             {tradesCount} {tradesCount === 1 ? 'trade' : 'trades'}
                           </div>
                         )}
-                      </div>
+                      </button>
                     </PopoverTrigger>
                     {tradesCount > 0 && (
-                      <PopoverContent className="w-[350px] p-4">
+                      <PopoverContent 
+                        className="w-[350px] p-4 z-50"
+                        align="center"
+                        sideOffset={5}
+                      >
                         <div className="space-y-2">
                           {dayTrades.map(trade => (
                             <div
@@ -334,16 +339,19 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                   </Popover>
                 );
               })}
-              <div className={cn(
-                "min-h-[100px] p-3 border border-gray-800 rounded-lg flex flex-col justify-center items-center",
-                weekPnL > 0 ? "bg-green-900/20" : 
-                weekPnL < 0 ? "bg-red-900/20" : 
-                trades.filter(trade => {
-                  const tradeDate = new Date(trade.date);
-                  return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 0 }) && 
-                         isSameMonth(tradeDate, currentMonth);
-                }).length > 0 ? "bg-yellow-900/20" : "bg-gray-900/50"
-              )}>
+              <button
+                type="button"
+                className={cn(
+                  "min-h-[100px] p-3 border border-gray-800 rounded-lg flex flex-col justify-center items-center w-full",
+                  weekPnL > 0 ? "bg-green-900/20" : 
+                  weekPnL < 0 ? "bg-red-900/20" : 
+                  trades.filter(trade => {
+                    const tradeDate = new Date(trade.date);
+                    return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 0 }) && 
+                           isSameMonth(tradeDate, currentMonth);
+                  }).length > 0 ? "bg-yellow-900/20" : "bg-gray-900/50"
+                )}
+              >
                 {weekPnL !== 0 ? (
                   <div className={cn(
                     "text-sm font-medium",
@@ -366,7 +374,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                     return tradeDate >= weekStart && tradeDate <= endOfWeek(week, { weekStartsOn: 0 });
                   }).length} trades
                 </div>
-              </div>
+              </button>
             </React.Fragment>
           );
         })}

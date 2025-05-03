@@ -124,9 +124,9 @@ export function AccountsDataTable() {
             <AlertDialogDescription>
               Esta acción no se puede deshacer.
               {selectedAccount && (
-                <div className="mt-2">
+                <span className="mt-2 block">
                   <span className="font-semibold">{selectedAccount.name}</span>
-                </div>
+                </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>

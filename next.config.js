@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['uploadthing.com'],
+    domains: ['uploadthing.com', process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : ''],
   },
   // Temporal: deshabilitar la verificación de tipos durante el build para solucionar errores
   typescript: {

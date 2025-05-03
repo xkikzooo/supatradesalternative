@@ -11,11 +11,14 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  defaultMonth = new Date(),
   ...props
 }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      defaultMonth={defaultMonth}
+      today={new Date()}
       className={cn(
         "p-4 bg-gradient-to-b from-[#0A0A0A] to-[#111111] rounded-xl backdrop-blur-xl",
         "border border-white/[0.05] shadow-[0_0_1px_rgba(0,0,0,0.5)]",
@@ -55,15 +58,17 @@ function Calendar({
           "hover:scale-110 active:scale-95"
         ),
         day_selected: cn(
-          "bg-gradient-to-br from-purple-500/80 to-blue-500/80 text-white",
-          "hover:from-purple-600/80 hover:to-blue-600/80",
-          "shadow-lg shadow-purple-500/20",
-          "font-medium tracking-wide"
+          "bg-gradient-to-br from-purple-600 to-blue-600 text-white",
+          "hover:from-purple-700 hover:to-blue-700",
+          "shadow-lg shadow-purple-500/30",
+          "font-medium tracking-wide",
+          "scale-110 transform"
         ),
         day_today: cn(
-          "text-white font-medium",
-          "ring-2 ring-yellow-400/50 ring-offset-1 ring-offset-[#0A0A0A]",
-          "before:absolute before:h-1 before:w-1 before:rounded-full before:bg-yellow-400/70",
+          "text-white font-bold",
+          "bg-gradient-to-br from-blue-500/40 to-blue-600/40",
+          "ring-2 ring-blue-400 ring-offset-1 ring-offset-[#0A0A0A]",
+          "before:absolute before:h-1 before:w-1 before:rounded-full before:bg-blue-400",
           "before:bottom-1 before:left-1/2 before:-translate-x-1/2"
         ),
         day_outside: cn(

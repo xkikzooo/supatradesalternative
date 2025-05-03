@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { TradeCard } from "./TradeCard";
-import { toast } from "sonner";
+import { showToast } from "@/lib/toast";
 import { X } from "lucide-react";
 
 interface Trade {
@@ -49,7 +49,7 @@ export function AccountTradesModal({ isOpen, onClose, accountId, accountName }: 
         setTrades(data || []);
       } catch (error) {
         console.error("Error al obtener trades:", error);
-        toast.error("Error al cargar los trades");
+        showToast("Error al cargar los trades", "error");
       } finally {
         setIsLoading(false);
       }

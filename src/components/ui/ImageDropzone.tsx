@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageIcon, Loader2, Clipboard } from 'lucide-react';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -55,7 +55,7 @@ export function ImageDropzone({
     
     // Verificar si hay espacio para más imágenes
     if (isMaxImagesReached) {
-      toast.error(`Límite de ${MAX_IMAGES} imágenes alcanzado`);
+      showToast(`Límite de ${MAX_IMAGES} imágenes alcanzado`, 'error');
       return;
     }
     
@@ -64,7 +64,7 @@ export function ImageDropzone({
     
     // Mostrar advertencia si se descartaron archivos
     if (filesToProcess.length < acceptedFiles.length) {
-      toast.warning(`Solo se procesarán ${filesToProcess.length} de ${acceptedFiles.length} imágenes debido al límite de ${MAX_IMAGES} imágenes`);
+      showToast(`Solo se procesarán ${filesToProcess.length} de ${acceptedFiles.length} imágenes debido al límite de ${MAX_IMAGES} imágenes`, 'warning');
     }
 
     setIsUploading(true);
@@ -81,7 +81,7 @@ export function ImageDropzone({
       }
     } catch (error) {
       console.error('Error al subir las imágenes:', error);
-      toast.error('Error al subir las imágenes');
+      showToast('Error al subir las imágenes', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -94,7 +94,7 @@ export function ImageDropzone({
       
       // Verificar si hay espacio para más imágenes
       if (isMaxImagesReached) {
-        toast.error(`Límite de ${MAX_IMAGES} imágenes alcanzado`);
+        showToast(`Límite de ${MAX_IMAGES} imágenes alcanzado`, 'error');
         return;
       }
       
@@ -125,12 +125,12 @@ export function ImageDropzone({
         }
         
         if (uploadedUrls.length > 0) {
-          toast.success(`${uploadedUrls.length > 1 ? 'Imágenes pegadas' : 'Imagen pegada'} correctamente`);
+          showToast(`${uploadedUrls.length > 1 ? 'Imágenes pegadas' : 'Imagen pegada'} correctamente`, 'success');
           onAddImages(uploadedUrls);
         }
       } catch (error) {
         console.error('Error al pegar imágenes:', error);
-        toast.error('Error al pegar imágenes');
+        showToast('Error al pegar imágenes', 'error');
       } finally {
         setIsUploading(false);
       }

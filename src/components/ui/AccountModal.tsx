@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { showToast } from "@/lib/toast";
 import { Label } from "@/components/ui/label";
 
 interface AccountModalProps {
@@ -26,6 +26,20 @@ interface AccountModalProps {
 
 export function AccountModal({ isOpen, onClose, onSuccess, initialData }: AccountModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Función para forzar la actualización de datos
+  const fetchAccounts = async () => {
+    try {
+      const response = await fetch("/api/accounts");
+      if (response.ok) {
+        const data = await response.json();
+        // Solo necesitamos forzar la petición para actualizar la caché
+        console.log("Cuentas actualizadas:", data.length);
+      }
+    } catch (error) {
+      console.error("Error al actualizar cuentas:", error);
+    }
+  };
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     name: '',
@@ -88,13 +102,16 @@ export function AccountModal({ isOpen, onClose, onSuccess, initialData }: Accoun
         throw new Error(errorData.error || 'Error al guardar la cuenta');
       }
 
-      toast.success(initialData ? 'Cuenta actualizada' : 'Cuenta creada');
+      showToast(initialData ? 'Cuenta actualizada' : 'Cuenta creada', 'success');
+      
+      // Forzar refresco de los datos antes de cerrar el modal
+      fetchAccounts();
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Error:', error);
       setError(error instanceof Error ? error.message : "Error al guardar la cuenta");
-      toast.error(error instanceof Error ? error.message : "Error al guardar la cuenta");
+      showToast(error instanceof Error ? error.message : "Error al guardar la cuenta", 'error');
     } finally {
       setIsLoading(false);
     }
@@ -212,7 +229,12 @@ export function AccountModal({ isOpen, onClose, onSuccess, initialData }: Accoun
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500">
+            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
+                <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z"></path>
+                <circle cx="12" cy="12" r="1"></circle>
+                <path d="M12 8v3"></path>
+              </svg>
               {error}
             </div>
           )}

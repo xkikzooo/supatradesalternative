@@ -68,7 +68,9 @@ export async function POST(req: Request) {
 
     // Eliminar el token de verificación usado
     await prisma.verificationToken.delete({
-      where: { id: verificationToken.id },
+      where: { 
+        token: code
+      },
     });
 
     return NextResponse.json({

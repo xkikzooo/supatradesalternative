@@ -1,70 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { ImageDropzone } from './ImageDropzone';
-import { TagSelector } from './tag-selector';
+import { ImageDropzone } from '@/components/ui/ImageDropzone';
+import { TagSelector } from '@/components/ui/tag-selector';
 import { showToast } from '@/lib/toast';
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { X, Plus, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { X, Plus, ArrowLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
-
-interface TradeModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
-  initialData?: {
-    id: string;
-    tradingPair: {
-      id: string;
-      name: string;
-    };
-    direction: 'LONG' | 'SHORT';
-    bias: string;
-    biasExplanation?: string;
-    psychology?: string;
-    result: string;
-    pnl: number;
-    riskAmount?: number;
-    images: string[];
-    date?: string;
-    accountId?: string;
-  };
-}
 
 interface TradingPair {
   id: string;
   name: string;
 }
 
-interface TradeFormData {
-  id?: string;
-  tradingPair: {
-    id: string;
-    name: string;
-  };
-  direction: 'LONG' | 'SHORT';
-  bias: string;
-  biasExplanation: string;
-  psychology?: string;
-  result: 'WIN' | 'LOSS' | 'BREAKEVEN';
-  pnl: string | number;
-  riskAmount: number;
-  images: string[];
-  date: string;
-  accountId?: string;
-}
-
-export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeModalProps) {
+export default function NewTradePage() {
   const router = useRouter();
   
   // Función para forzar la actualización de datos
@@ -80,14 +34,13 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       console.error("Error al actualizar trades:", error);
     }
   };
+  
   const dataFetchedRef = useRef<boolean>(false);
   const [tradingPairs, setTradingPairs] = useState<TradingPair[]>([]);
   const [accounts, setAccounts] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(
-    initialData?.date ? new Date(initialData.date) : new Date()
-  );
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [newPair, setNewPair] = useState("");
   const [showNewPairInput, setShowNewPairInput] = useState(false);
 
@@ -105,48 +58,8 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
     accountId: '',
   });
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        tradingPairId: initialData.tradingPair.id,
-        direction: initialData.direction,
-        bias: initialData.bias,
-        biasExplanation: initialData.biasExplanation || '',
-        psychology: initialData.psychology || '',
-        result: initialData.result,
-        pnl: Math.abs(initialData.pnl).toLocaleString('en-US', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        }),
-        riskAmount: initialData.riskAmount || 0,
-        images: initialData.images,
-        date: initialData.date || new Date().toISOString().split('T')[0],
-        accountId: initialData.accountId || '',
-      });
-      if (initialData.date) {
-        setDate(new Date(initialData.date));
-      }
-    } else if (isOpen) {
-      // Resetear el formulario cuando se abre para crear un nuevo trade
-      setFormData({
-        tradingPairId: '',
-        direction: 'LONG',
-        bias: 'NEUTRAL',
-        biasExplanation: '',
-        psychology: '',
-        result: 'WIN',
-        pnl: '0',
-        riskAmount: 0,
-        images: [],
-        date: new Date().toISOString().split('T')[0],
-        accountId: '',
-      });
-      setDate(new Date());
-    }
-  }, [initialData, isOpen]);
-
   const loadInitialData = async () => {
-    if (dataFetchedRef.current || !isOpen) return;
+    if (dataFetchedRef.current) return;
     
     setIsLoading(true);
     try {
@@ -158,12 +71,8 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
   };
 
   useEffect(() => {
-    if (!isOpen) {
-      dataFetchedRef.current = false;
-    } else {
-      loadInitialData();
-    }
-  }, [isOpen]);
+    loadInitialData();
+  }, []);
 
   const fetchTradingPairs = async () => {
     try {
@@ -248,11 +157,8 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
         accountId: formData.accountId
       };
 
-      const endpoint = initialData ? `/api/trades/${initialData.id}` : '/api/trades';
-      const method = initialData ? 'PUT' : 'POST';
-
-      const response = await fetch(endpoint, {
-        method,
+      const response = await fetch('/api/trades', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -264,22 +170,11 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
         throw new Error(errorData.error || 'Error al guardar el trade');
       }
 
-      showToast(
-        initialData ? 'Trade actualizado correctamente' : 'Trade creado correctamente',
-        'success'
-      );
+      showToast('Trade creado correctamente', 'success');
       
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      // Forzar refresco de los datos antes de cerrar el modal
+      // Forzar refresco de los datos antes de volver
       fetchTrades();
-      onClose();
+      router.push('/trades');
     } catch (error) {
       console.error('Error:', error);
       showToast(error instanceof Error ? error.message : 'Error al guardar el trade', 'error');
@@ -316,44 +211,30 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
     }
   };
 
-  const handleDeletePair = async (pairId: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este par de trading?")) return;
-
-    try {
-      const response = await fetch(`/api/trading-pairs/${pairId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el par de trading");
-      }
-
-      setTradingPairs(prev => prev.filter(pair => pair.id !== pairId));
-      if (formData.tradingPairId === pairId) {
-        setFormData(prev => ({ ...prev, tradingPairId: '' }));
-      }
-      showToast("Par de trading eliminado correctamente", "success");
-    } catch (error) {
-      console.error("Error:", error);
-      showToast("Error al eliminar el par de trading", "error");
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full p-0 overflow-hidden flex flex-col rounded-xl border border-gray-800/50 backdrop-blur-md">
-        <div className="flex flex-col md:flex-row h-full">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Button 
+            onClick={() => router.push('/trades')}
+            variant="ghost" 
+            className="mr-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Nuevo Trade</h1>
+            <p className="text-sm text-gray-400">
+              Completa la información para registrar un nuevo trade
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800/50 p-6 rounded-xl">
+        <div className="flex flex-col md:flex-row gap-6">
           {/* Panel lateral con información del trade */}
-          <div className="bg-gradient-to-br from-gray-900 to-black p-6 md:w-[320px] border-r border-gray-800/50 flex flex-col">
-            <DialogHeader className="mb-6 pb-4 border-b border-gray-800/50">
-              <DialogTitle className="text-2xl font-bold text-white">
-                {initialData ? 'Editar Trade' : 'Nuevo Trade'}
-              </DialogTitle>
-              <p className="text-gray-400 mt-2 text-sm">
-                Completa la información para {initialData ? 'actualizar el' : 'registrar un nuevo'} trade
-              </p>
-            </DialogHeader>
-            
+          <div className="bg-gradient-to-br from-gray-900 to-black p-6 md:w-[320px] rounded-xl border border-gray-800/50 flex flex-col">
             <div className="space-y-6 flex-1">
               <div className="space-y-2">
                 <Label className="text-gray-300">Fecha</Label>
@@ -437,7 +318,6 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
                   onValueChange={(value) => {
                     if (value === 'create_account') {
                       router.push('/accounts');
-                      onClose();
                       return;
                     }
                     setFormData((prev) => ({ ...prev, accountId: value }));
@@ -469,16 +349,16 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
 
             <div className="mt-auto pt-6 border-t border-gray-800/50">
               <Button type="submit" form="trade-form" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Guardando...' : initialData ? 'Actualizar Trade' : 'Crear Trade'}
+                {isSubmitting ? 'Guardando...' : 'Crear Trade'}
               </Button>
-              <Button variant="ghost" type="button" onClick={onClose} className="w-full mt-2">
+              <Button variant="ghost" type="button" onClick={() => router.push('/trades')} className="w-full mt-2">
                 Cancelar
               </Button>
             </div>
           </div>
 
           {/* Contenido principal del formulario */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1">
             <form id="trade-form" onSubmit={handleSubmit} className="space-y-8">
               {/* Primera fila: Dirección, Resultado, PnL y Riesgo */}
               <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
@@ -666,7 +546,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
             </form>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 } 

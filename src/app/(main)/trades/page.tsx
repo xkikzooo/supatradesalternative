@@ -4,7 +4,8 @@ import { TradeCard } from "@/components/ui/TradeCard";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Check, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { TradeModal } from "@/components/ui/TradeModal";
+import { useRouter } from "next/navigation";
+// TradeModal eliminado - ahora se usa página completa
 import { showToast } from "@/lib/toast";
 import { TradeFilter } from "@/components/ui/trade-filter";
 import { startOfToday, startOfWeek, startOfMonth, isAfter, endOfMonth } from "date-fns";
@@ -18,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 
 interface Trade {
   id: string;
@@ -41,7 +41,7 @@ interface Trade {
 }
 
 export default function TradesPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Modal eliminado - ahora se usa página completa
   const [trades, setTrades] = useState<Trade[]>([]);
   const [filteredTrades, setFilteredTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,8 +112,10 @@ export default function TradesPage() {
     filterTrades();
   }, [filterValue, trades]);
 
+  const router = useRouter();
+
   const handleEdit = (id: string) => {
-    console.log("Editar trade:", id);
+    router.push(`/trades/edit/${id}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -151,7 +153,7 @@ export default function TradesPage() {
     let errorCount = 0;
     
     // Mostrar mensaje de inicio
-    toast('Eliminando ' + selectedTrades.length + ' trades...');
+    showToast('Eliminando ' + selectedTrades.length + ' trades...', 'info');
     
     // Eliminar cada trade seleccionado
     for (const id of selectedTrades) {
@@ -193,9 +195,7 @@ export default function TradesPage() {
     setSelectionMode(!selectionMode);
   };
 
-  const handleModalSuccess = () => {
-    fetchTrades();
-  };
+  // Función de éxito del modal eliminada - ahora se maneja en las páginas completas
 
   return (
     <div className="flex flex-col gap-4">
@@ -237,8 +237,8 @@ export default function TradesPage() {
                 Seleccionar
               </Button>
               <Button 
-                onClick={() => setIsModalOpen(true)}
-                className="bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white rounded-lg px-4 py-2 h-10 font-medium border border-gray-800/50 hover:border-gray-700/50 transition-all flex items-center gap-2"
+                onClick={() => router.push('/trades/new')}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 h-10 font-medium transition-all flex items-center gap-2"
               >
                 <Plus className="h-5 w-5" />
                 Nuevo Trade
@@ -279,11 +279,7 @@ export default function TradesPage() {
         </div>
       )}
 
-      <TradeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleModalSuccess}
-      />
+      {/* Modal eliminado - ahora se usa una página completa */}
 
       {/* Diálogo de confirmación para eliminación múltiple */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
