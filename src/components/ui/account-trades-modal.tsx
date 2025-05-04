@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { TradeCard } from "./TradeCard";
 import { showToast } from "@/lib/toast";
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Trade {
   id: string;
@@ -34,6 +35,7 @@ interface AccountTradesModalProps {
 export function AccountTradesModal({ isOpen, onClose, accountId, accountName }: AccountTradesModalProps) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -59,8 +61,8 @@ export function AccountTradesModal({ isOpen, onClose, accountId, accountName }: 
   }, [accountId, isOpen]);
 
   const handleEdit = (id: string) => {
-    // Implementar edición si es necesario
-    console.log("Editar trade:", id);
+    router.push(`/trades/edit/${id}`);
+    onClose(); // Cerrar el modal al navegar
   };
 
   const handleDelete = async (id: string) => {
@@ -73,13 +75,13 @@ export function AccountTradesModal({ isOpen, onClose, accountId, accountName }: 
         throw new Error("Error al eliminar el trade");
       }
 
-      toast.success("Trade eliminado correctamente");
+      showToast("Trade eliminado correctamente", "success");
       // Recargar los trades
       const updatedTrades = trades.filter(trade => trade.id !== id);
       setTrades(updatedTrades);
     } catch (error) {
       console.error("Error al eliminar:", error);
-      toast.error("Error al eliminar el trade");
+      showToast("Error al eliminar el trade", "error");
     }
   };
 
@@ -122,4 +124,4 @@ export function AccountTradesModal({ isOpen, onClose, accountId, accountName }: 
       </DialogContent>
     </Dialog>
   );
-} 
+}

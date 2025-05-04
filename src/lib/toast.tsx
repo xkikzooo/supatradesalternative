@@ -31,10 +31,14 @@ export function showToast(message: string, type: ToastType = 'success') {
       break;
   }
   
-  toast(message, {
+  // Usar duración más larga para errores
+  const duration = type === 'error' ? 5000 : 3000;
+  
+  return toast(message, {
     className: `toast-${type}`,
-    duration: 4000,
+    duration: duration,
     icon,
     position: 'top-center',
+    closeButton: true
   });
 } 

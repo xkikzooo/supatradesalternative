@@ -73,7 +73,7 @@ export function RecentTradesTable({ trades }: RecentTradesTableProps) {
             <tr 
               key={trade.id} 
               className="hover:bg-gray-800/50 cursor-pointer transition-colors"
-              onClick={() => router.push(`/trades?id=${trade.id}`)}
+              onClick={() => router.push(`/trades/edit/${trade.id}`)}
             >
               <td className="p-4 text-left align-middle text-sm text-gray-300">
                 {format(new Date(trade.date), 'dd/MM/yyyy', { locale: es })}

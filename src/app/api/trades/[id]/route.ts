@@ -4,6 +4,64 @@ import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 
+// Agregar método GET para obtener un trade por su ID
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    // Verificar que el trade existe y pertenece al usuario
+    const trade = await prisma.trade.findFirst({
+      where: {
+        id: params.id,
+        userId: session.user.id
+      },
+      include: {
+        tradingPair: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        account: {
+          select: {
+            id: true,
+            name: true,
+            broker: true,
+            type: true,
+            initialBalance: true,
+          },
+        },
+      },
+    });
+
+    if (!trade) {
+      console.error('Trade no encontrado:', params.id);
+      return NextResponse.json(
+        { error: 'Trade no encontrado o no autorizado' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(trade);
+  } catch (error) {
+    console.error('Error al obtener trade:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener el trade' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }

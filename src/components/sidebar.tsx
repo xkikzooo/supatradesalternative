@@ -16,13 +16,12 @@ import {
 import { signOut, useSession } from 'next-auth/react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuContent, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
-import { useState } from 'react';
-import { TradeModal } from '@/components/ui/TradeModal';
+import { useRouter } from 'next/navigation';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+  const router = useRouter();
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/login' });
@@ -42,7 +41,7 @@ export function Sidebar() {
         </div>
 
         <button
-          onClick={() => setIsTradeModalOpen(true)}
+          onClick={() => router.push('/trades/new')}
           className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-blue-500/80 text-white transition-all hover:bg-blue-600/90 text-sm font-medium"
         >
           <Plus className="h-4 w-4" />
@@ -136,12 +135,6 @@ export function Sidebar() {
           </DropdownMenu>
         </div>
       </div>
-
-      <TradeModal
-        isOpen={isTradeModalOpen}
-        onClose={() => setIsTradeModalOpen(false)}
-        onSuccess={() => {}}
-      />
     </div>
   );
 } 

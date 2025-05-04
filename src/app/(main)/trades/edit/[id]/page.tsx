@@ -36,9 +36,15 @@ interface Trade {
   accountId?: string;
 }
 
-export default function EditTradePage({ params }: { params: { id: string } }) {
+type Params = {
+  params: {
+    id: string;
+  };
+};
+
+export default function EditTradePage({ params }: Params) {
   const router = useRouter();
-  const { id } = params;
+  const tradeId = params.id;
   
   // Función para forzar la actualización de datos
   const fetchTrades = async () => {
@@ -83,10 +89,24 @@ export default function EditTradePage({ params }: { params: { id: string } }) {
     const fetchTrade = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/trades/${id}`);
+        const response = await fetch(`/api/trades/${tradeId}`);
+        
         if (!response.ok) {
-          throw new Error("Error al cargar el trade");
+          // Intentar obtener el mensaje de error específico del backend
+          let errorMessage = "Error al cargar el trade";
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (jsonError) {
+            // Si no podemos parsear el JSON, usamos el mensaje genérico
+            console.error("Error al parsear respuesta:", jsonError);
+          }
+          
+          throw new Error(errorMessage);
         }
+        
         const data = await response.json();
         setTrade(data);
         
@@ -113,15 +133,19 @@ export default function EditTradePage({ params }: { params: { id: string } }) {
         }
       } catch (error) {
         console.error("Error al obtener el trade:", error);
-        showToast("Error al cargar el trade", "error");
-        router.push('/trades');
+        // Mostrar mensaje de error específico en el toast
+        showToast(error instanceof Error ? error.message : "Error al cargar el trade", "error");
+        // Redireccionar al usuario a la página de trades
+        setTimeout(() => {
+          router.push('/trades');
+        }, 2000); // Pequeño retraso para que el usuario pueda ver el mensaje
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchTrade();
-  }, [id, router]);
+  }, [tradeId, router]);
 
   const loadInitialData = async () => {
     if (dataFetchedRef.current) return;
@@ -211,7 +235,7 @@ export default function EditTradePage({ params }: { params: { id: string } }) {
         accountId: formData.accountId
       };
 
-      const response = await fetch(`/api/trades/${id}`, {
+      const response = await fetch(`/api/trades/${tradeId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
