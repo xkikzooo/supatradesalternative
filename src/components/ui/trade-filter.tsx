@@ -53,34 +53,34 @@ export function TradeFilter({
     <div className="flex flex-wrap gap-3 items-end">
       <div>
         <Label htmlFor="date-filter" className="text-sm text-gray-400 mb-1 block">Fecha</Label>
-        <Select
-          value={value.startsWith('month_') ? value : 'month'}
-          onValueChange={(selectedValue) => {
-            onChange(selectedValue);
-          }}
-        >
-          <SelectTrigger 
+      <Select
+        value={value.startsWith('month_') ? value : 'month'}
+        onValueChange={(selectedValue) => {
+          onChange(selectedValue);
+        }}
+      >
+        <SelectTrigger 
             id="date-filter"
-            className={cn(
+          className={cn(
               "px-3 py-1.5 h-auto text-sm font-medium rounded-md transition-colors min-w-[150px]",
-              "border border-gray-800",
-              "focus:outline-none focus:ring-0",
-              value.startsWith('month_') || value === 'month'
-                ? "bg-gray-800 text-white"
-                : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/70"
-            )}
-          >
-            <SelectValue placeholder="Mes" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="month">Mes actual</SelectItem>
-            {availableMonths.map((month) => (
-              <SelectItem key={month.value} value={month.value}>
-                {month.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            "border border-gray-800",
+            "focus:outline-none focus:ring-0",
+            value.startsWith('month_') || value === 'month'
+              ? "bg-gray-800 text-white"
+              : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/70"
+          )}
+        >
+          <SelectValue placeholder="Mes" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="month">Mes actual</SelectItem>
+          {availableMonths.map((month) => (
+            <SelectItem key={month.value} value={month.value}>
+              {month.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       </div>
 
       {onFilterChange && (

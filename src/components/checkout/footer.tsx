@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 /**
@@ -8,6 +8,15 @@ import Link from 'next/link';
  */
 export default function CheckoutFooter() {
   const currentYear = new Date().getFullYear();
+  const [isCheckoutSubdomain, setIsCheckoutSubdomain] = useState(false);
+  
+  useEffect(() => {
+    // Verificar si estamos en el subdominio checkout.supatrades.app
+    if (typeof window !== 'undefined') {
+      const host = window.location.host;
+      setIsCheckoutSubdomain(host === 'checkout.supatrades.app');
+    }
+  }, []);
 
   return (
     <footer className="border-t border-gray-800 bg-black text-white mt-auto">
@@ -25,7 +34,7 @@ export default function CheckoutFooter() {
             <h3 className="text-xl font-semibold mb-4 text-white">Enlaces</h3>
             <ul className="space-y-3">
               <li>
-                <Link href="/checkout" className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
+                <Link href={isCheckoutSubdomain ? "/" : "/checkout"} className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
                   Planes de Suscripción
                 </Link>
               </li>

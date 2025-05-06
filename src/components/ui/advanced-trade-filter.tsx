@@ -86,62 +86,62 @@ export function AdvancedTradeFilter({
   
   return (
     <div className="mb-6">
-      {savedFilters.length > 0 && (
+            {savedFilters.length > 0 && (
         <div className="flex justify-end mb-2">
-          <Select onValueChange={(value) => onLoadFilter && onLoadFilter(
-            savedFilters.find(f => f.name === value)?.filters || {}
-          )}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtros guardados" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Filtros guardados</SelectLabel>
-                {savedFilters.map((filter) => (
-                  <SelectItem key={filter.name} value={filter.name}>
-                    {filter.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          
-          {activeFilterCount > 0 && (
-            <>
-              <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-                <DialogTrigger asChild>
+              <Select onValueChange={(value) => onLoadFilter && onLoadFilter(
+                savedFilters.find(f => f.name === value)?.filters || {}
+              )}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtros guardados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Filtros guardados</SelectLabel>
+                    {savedFilters.map((filter) => (
+                      <SelectItem key={filter.name} value={filter.name}>
+                        {filter.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            
+            {activeFilterCount > 0 && (
+              <>
+                <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                  <DialogTrigger asChild>
                   <Button size="sm" variant="outline" className="ml-2">
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar filtro
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Guardar filtro</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <Label htmlFor="filter-name">Nombre del filtro</Label>
-                    <Input
-                      id="filter-name"
-                      value={filterName}
-                      onChange={(e) => setFilterName(e.target.value)}
-                      placeholder="Mi filtro personalizado"
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleSaveFilter}>Guardar</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar filtro
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Guardar filtro</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <Label htmlFor="filter-name">Nombre del filtro</Label>
+                      <Input
+                        id="filter-name"
+                        value={filterName}
+                        onChange={(e) => setFilterName(e.target.value)}
+                        placeholder="Mi filtro personalizado"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleSaveFilter}>Guardar</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                
               <Button size="sm" variant="outline" onClick={clearFilters} className="ml-2">
-                <X className="h-4 w-4 mr-2" />
-                Limpiar
-              </Button>
-            </>
-          )}
-        </div>
+                  <X className="h-4 w-4 mr-2" />
+                  Limpiar
+                </Button>
+              </>
+            )}
+          </div>
       )}
     </div>
   );

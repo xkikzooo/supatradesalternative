@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,20 @@ import { Button } from '@/components/ui/button';
  * Componente de cabecera para las páginas de checkout
  */
 export default function CheckoutHeader() {
+  const [isCheckoutSubdomain, setIsCheckoutSubdomain] = useState(false);
+  
+  useEffect(() => {
+    // Verificar si estamos en el subdominio checkout.supatrades.app
+    if (typeof window !== 'undefined') {
+      const host = window.location.host;
+      setIsCheckoutSubdomain(host === 'checkout.supatrades.app');
+    }
+  }, []);
+
   return (
     <header className="border-b border-gray-800 bg-black text-white">
       <div className="container mx-auto py-4 px-4 flex justify-between items-center">
-        <Link href="/checkout" className="flex items-center space-x-2">
+        <Link href={isCheckoutSubdomain ? "/" : "/checkout"} className="flex items-center space-x-2">
           <Image 
             src="/supatrades.svg" 
             alt="SupaTrades Logo" 
@@ -24,7 +34,7 @@ export default function CheckoutHeader() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-8">
-          <Link href="/checkout" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+          <Link href={isCheckoutSubdomain ? "/" : "/checkout"} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
             Planes
           </Link>
           <Link href="/checkout/faq" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">

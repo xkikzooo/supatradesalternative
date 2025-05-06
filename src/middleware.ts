@@ -5,14 +5,24 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host');
   const url = request.nextUrl.clone();
 
-  // Redirigir checkout.supatrades.app a la página de checkout
+  // Manejar el subdominio checkout.supatrades.app
   if (host === 'checkout.supatrades.app') {
-    // Si ya está en /checkout, no necesitamos redirigir
-    if (url.pathname === '/checkout') {
+    // Si es la ruta raíz, reescribir internamente a /checkout sin cambiar la URL visible
+    if (url.pathname === '/') {
+      url.pathname = '/checkout';
+      return NextResponse.rewrite(url);
+    }
+    
+    // Permitir rutas específicas de checkout
+    if (url.pathname === '/checkout' || 
+        url.pathname === '/checkout/faq' || 
+        url.pathname === '/checkout/terms' || 
+        url.pathname === '/checkout/privacy' || 
+        url.pathname === '/checkout/refund') {
       return NextResponse.next();
     }
 
-    // Si está yendo a /dashboard o cualquier otra ruta, redirigir a /checkout
+    // Si está yendo a cualquier otra ruta, redirigir a /checkout
     url.pathname = '/checkout';
     return NextResponse.redirect(url);
   }
