@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { WeeklyCalendar } from "@/components/weekly-calendar";
 import { AccountPreview } from "@/components/account-preview";
 import { RecentTradesTable } from "@/components/recent-trades-table";
+import { calculateMaxDrawdown, calculateSharpeRatio, calculateSortinoRatio, calculateProfitFactor, calculateExpectancy } from "@/lib/financial-metrics";
+import { TradingGoals } from "@/components/trading-goals";
 
 interface Trade {
   id: string;
@@ -43,6 +45,13 @@ export default function DashboardPage() {
     breakEvenTrades: 0,
   });
   const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
+  const [advancedStats, setAdvancedStats] = useState({
+    sharpeRatio: 0,
+    sortinoRatio: 0,
+    maxDrawdown: 0,
+    profitFactor: 0,
+    expectancy: 0
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -93,6 +102,15 @@ export default function DashboardPage() {
           ? (winningTrades / tradesExcludingBreakeven) * 100 
           : 0;
 
+        // Calcular métricas financieras avanzadas
+        setAdvancedStats({
+          sharpeRatio: calculateSharpeRatio(trades),
+          sortinoRatio: calculateSortinoRatio(trades),
+          maxDrawdown: calculateMaxDrawdown(trades),
+          profitFactor: calculateProfitFactor(trades),
+          expectancy: calculateExpectancy(trades)
+        });
+
         setStats({
           totalPnL: trades.reduce((sum, trade) => {
             // Si el trade es una pérdida, el PnL ya viene negativo
@@ -132,7 +150,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Ganancia Total</CardTitle>
@@ -152,6 +170,26 @@ export default function DashboardPage() {
             <p className="text-xs text-gray-400">
               De {stats.winningTrades + stats.losingTrades} trades
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Factor de beneficio</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{advancedStats.profitFactor.toFixed(2)}</div>
+            <p className="text-xs text-gray-400">Relación ganancia/pérdida</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Expectativa</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">${advancedStats.expectancy.toFixed(2)}</div>
+            <p className="text-xs text-gray-400">Ganancia esperada por trade</p>
           </CardContent>
         </Card>
 

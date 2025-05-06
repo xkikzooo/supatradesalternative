@@ -17,12 +17,12 @@ export async function POST(req: Request) {
     const data = await req.json();
     console.log('Datos recibidos:', data);
     
-    if (!data.tradingPairId || !data.date || data.pnl === undefined || !data.accountId) {
+    if (!data.tradingPairId || !data.date || data.pnl === undefined || !data.accountIds || !data.accountIds.length) {
       console.log('Campos faltantes:', {
         tradingPairId: !data.tradingPairId,
         date: !data.date,
         pnl: data.pnl === undefined,
-        accountId: !data.accountId
+        accountIds: !data.accountIds || !data.accountIds.length
       });
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
@@ -47,26 +47,29 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar que la cuenta existe y pertenece al usuario
-    const account = await prisma.tradingAccount.findFirst({
+    // Verificar que todas las cuentas existen y pertenecen al usuario
+    const accounts = await prisma.tradingAccount.findMany({
       where: {
-        id: data.accountId,
+        id: {
+          in: data.accountIds
+        },
         userId: session.user.id,
       },
     });
 
-    if (!account) {
-      console.log('Cuenta no encontrada o no autorizada:', {
-        accountId: data.accountId
+    if (!accounts.length || accounts.length !== data.accountIds.length) {
+      console.log('Una o más cuentas no encontradas o no autorizadas:', {
+        accountIds: data.accountIds,
+        accountsEncontradas: accounts.length
       });
       return NextResponse.json(
-        { error: 'Cuenta no encontrada o no autorizada' },
+        { error: 'Una o más cuentas no encontradas o no autorizadas' },
         { status: 404 }
       );
     }
 
-    // Preparar los datos para la creación
-    const tradeData = {
+    // Preparar los datos base para la creación
+    const baseTradeData = {
       tradingPairId: data.tradingPairId,
       direction: data.direction || 'LONG',
       bias: data.bias || 'NEUTRAL',
@@ -78,55 +81,71 @@ export async function POST(req: Request) {
       images: Array.isArray(data.images) ? data.images : [],
       date: new Date(data.date),
       userId: session.user.id,
-      accountId: data.accountId,
     };
 
     // Validar que los valores de los enums sean válidos
-    if (!['LONG', 'SHORT'].includes(tradeData.direction)) {
+    if (!['LONG', 'SHORT'].includes(baseTradeData.direction)) {
       return NextResponse.json(
         { error: 'Dirección de trade inválida' },
         { status: 400 }
       );
     }
 
-    if (tradeData.bias && !['BULLISH', 'BEARISH', 'NEUTRAL'].includes(tradeData.bias)) {
+    if (baseTradeData.bias && !['BULLISH', 'BEARISH', 'NEUTRAL'].includes(baseTradeData.bias)) {
       return NextResponse.json(
         { error: 'Bias inválido' },
         { status: 400 }
       );
     }
 
-    if (!['WIN', 'LOSS', 'BREAKEVEN'].includes(tradeData.result)) {
+    if (!['WIN', 'LOSS', 'BREAKEVEN'].includes(baseTradeData.result)) {
       return NextResponse.json(
         { error: 'Resultado inválido' },
         { status: 400 }
       );
     }
 
-    console.log('Datos a insertar:', tradeData);
+    console.log('Datos base a insertar:', baseTradeData);
 
-    // Usar transacción para asegurar que tanto la creación del trade como la actualización 
-    // del balance se realicen juntas, o ninguna se realice
+    // Usar transacción para asegurar que tanto la creación de los trades como la actualización 
+    // de los balances se realicen juntas
     const result = await prisma.$transaction(async (tx: any) => {
-      // 1. Crear el trade
-      const trade = await tx.trade.create({
-        data: tradeData,
-        include: {
-          tradingPair: {
-            select: {
-              id: true,
-              name: true,
+      const createdTrades = [];
+      
+      // Crear un trade para cada cuenta seleccionada
+      for (const accountId of data.accountIds) {
+        // 1. Crear el trade para esta cuenta
+        const tradeData = {
+          ...baseTradeData,
+          accountId
+        };
+        
+        const trade = await tx.trade.create({
+          data: tradeData,
+          include: {
+            tradingPair: {
+              select: {
+                id: true,
+                name: true,
+              },
             },
+            account: {
+              select: {
+                id: true,
+                name: true,
+                broker: true,
+              }
+            }
           },
-        },
-      });
-
-      // 2. Actualizar el balance de LA CUENTA ESPECÍFICA seleccionada
-      if (data.accountId) {
+        });
+        
+        createdTrades.push(trade);
+        
+        // 2. Actualizar el balance de esta cuenta
         const pnlValue = data.result === 'LOSS' ? -Math.abs(Number(data.pnl)) : Number(data.pnl);
         await tx.tradingAccount.update({
           where: {
-            id: data.accountId,
+            id: accountId,
           },
           data: {
             balance: {
@@ -136,13 +155,13 @@ export async function POST(req: Request) {
         });
       }
 
-      return trade;
+      return createdTrades;
     });
 
-    console.log('Trade creado:', result);
+    console.log('Trades creados:', result);
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error al crear trade:', error);
+    console.error('Error al crear trades:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

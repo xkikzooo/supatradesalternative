@@ -1,17 +1,26 @@
 import React from 'react';
 import { toast } from 'sonner';
 import { 
-  CheckCircle, 
-  AlertCircle, 
-  AlertTriangle, 
-  Info,
   BadgeCheck,
   AlertOctagon,
   Bell,
-  ShieldAlert
+  ShieldAlert,
 } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+// Componente personalizado para el botón de cierre
+const CloseButton = ({ closeToast }: { closeToast: () => void }) => {
+  return (
+    <button
+      onClick={closeToast}
+      className="absolute top-1 right-1 p-1 rounded-full bg-zinc-800 hover:bg-zinc-700 transition-colors"
+      aria-label="Cerrar notificación"
+    >
+      <X className="h-4 w-4 text-zinc-300" />
+    </button>
+  );
+};
 
 export function showToast(message: string, type: ToastType = 'success') {
   let icon: React.ReactNode = null;
@@ -31,14 +40,21 @@ export function showToast(message: string, type: ToastType = 'success') {
       break;
   }
   
-  // Usar duración más larga para errores
-  const duration = type === 'error' ? 5000 : 3000;
+  // Duración según el tipo
+  const duration = type === 'error' ? 5000 : 
+                  type === 'warning' ? 4000 : 3000;
+  
+  // Limpiar toasts existentes si es un error o advertencia
+  if (type === 'error' || type === 'warning') {
+    toast.dismiss();
+  }
   
   return toast(message, {
     className: `toast-${type}`,
     duration: duration,
     icon,
-    position: 'top-center',
-    closeButton: true
+    style: {
+      zIndex: 9999,
+    },
   });
 } 

@@ -72,16 +72,24 @@ export function AccountTradesModal({ isOpen, onClose, accountId, accountName }: 
       });
 
       if (!response.ok) {
-        throw new Error("Error al eliminar el trade");
+        let errorMessage = "Error al eliminar el trade";
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (_) {
+          // Si no podemos parsear el JSON, usamos el mensaje genérico
+        }
+        throw new Error(errorMessage);
       }
 
       showToast("Trade eliminado correctamente", "success");
-      // Recargar los trades
       const updatedTrades = trades.filter(trade => trade.id !== id);
       setTrades(updatedTrades);
     } catch (error) {
       console.error("Error al eliminar:", error);
-      showToast("Error al eliminar el trade", "error");
+      showToast(error instanceof Error ? error.message : "Error al eliminar el trade", "error");
     }
   };
 

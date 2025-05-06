@@ -2,7 +2,7 @@
 
 import { TradeCard } from "@/components/ui/TradeCard";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Check, X } from "lucide-react";
+import { Plus, Trash2, Check, X, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 // TradeModal eliminado - ahora se usa página completa
@@ -19,6 +19,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AdvancedTradeFilter, TradeFilters } from "@/components/ui/advanced-trade-filter";
+import { exportToExcel, exportToCSV, exportToPDF } from "@/lib/export-utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useLocalStorage } from "@/lib/use-local-storage";
 
 interface Trade {
   id: string;
@@ -32,6 +41,7 @@ interface Trade {
   psychology?: string;
   images: string[];
   direction: 'LONG' | 'SHORT';
+  result: 'WIN' | 'LOSS' | 'BREAKEVEN';
   account?: {
     id: string;
     name: string;
@@ -50,6 +60,13 @@ export default function TradesPage() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<TradeFilters>({});
+  const [tradingPairs, setTradingPairs] = useState<{id: string, name: string}[]>([]);
+  const [tradingAccounts, setTradingAccounts] = useState<{id: string, name: string}[]>([]);
+  const [savedFilters, setSavedFilters] = useLocalStorage<{name: string, filters: TradeFilters}[]>(
+    'saved-trade-filters', 
+    []
+  );
 
   const fetchTrades = async () => {
     try {
@@ -70,8 +87,32 @@ export default function TradesPage() {
     }
   };
 
+  const fetchTradesData = async () => {
+    try {
+      // Obtener pares de trading
+      const pairsResponse = await fetch("/api/trading-pairs");
+      if (pairsResponse.ok) {
+        const pairsData = await pairsResponse.json();
+        setTradingPairs(pairsData);
+      }
+
+      // Obtener cuentas
+      const accountsResponse = await fetch("/api/accounts");
+      if (accountsResponse.ok) {
+        const accountsData = await accountsResponse.json();
+        setTradingAccounts(accountsData);
+      }
+    } catch (error) {
+      console.error("Error al obtener datos:", error);
+    }
+  };
+
   useEffect(() => {
     fetchTrades();
+  }, []);
+
+  useEffect(() => {
+    fetchTradesData();
   }, []);
 
   useEffect(() => {
@@ -80,7 +121,7 @@ export default function TradesPage() {
       const weekStart = startOfWeek(today, { weekStartsOn: 1 });
       const monthStart = startOfMonth(today);
 
-      const filtered = trades.filter(trade => {
+      let filtered = trades.filter(trade => {
         const tradeDate = new Date(trade.date);
         
         // Si el valor comienza con 'month_', es un mes específico
@@ -95,22 +136,60 @@ export default function TradesPage() {
           return tradeDate >= filterMonthStart && tradeDate <= filterMonthEnd;
         }
         
+        let dateMatch = true;
         switch (filterValue) {
           case 'today':
-            return isAfter(tradeDate, today);
+            dateMatch = isAfter(tradeDate, today);
+            break;
           case 'week':
-            return isAfter(tradeDate, weekStart);
+            dateMatch = isAfter(tradeDate, weekStart);
+            break;
           case 'month':
-            return isAfter(tradeDate, monthStart);
+            dateMatch = isAfter(tradeDate, monthStart);
+            break;
           default:
-            return true;
+            dateMatch = true;
         }
+        
+        if (!dateMatch) return false;
+        
+        // Filtros avanzados
+        if (advancedFilters.direction && trade.direction !== advancedFilters.direction) {
+          return false;
+        }
+        
+        if (advancedFilters.result && trade.result !== advancedFilters.result) {
+          return false;
+        }
+        
+        if (advancedFilters.pair && trade.tradingPair.id !== advancedFilters.pair) {
+          return false;
+        }
+        
+        if (advancedFilters.account && trade.account?.id !== advancedFilters.account) {
+          return false;
+        }
+        
+        if (advancedFilters.bias && trade.bias !== advancedFilters.bias) {
+          return false;
+        }
+        
+        if (advancedFilters.pnlMin !== undefined && trade.pnl < advancedFilters.pnlMin) {
+          return false;
+        }
+        
+        if (advancedFilters.pnlMax !== undefined && trade.pnl > advancedFilters.pnlMax) {
+          return false;
+        }
+        
+        return true;
       });
+      
       setFilteredTrades(filtered);
     };
 
     filterTrades();
-  }, [filterValue, trades]);
+  }, [filterValue, trades, advancedFilters]);
 
   const router = useRouter();
 
@@ -124,15 +203,30 @@ export default function TradesPage() {
         method: 'DELETE',
       });
 
+      // Intentar obtener detalles específicos del error si la respuesta no es exitosa
       if (!response.ok) {
-        throw new Error("Error al eliminar el trade");
+        let errorMessage = "Error al eliminar el trade";
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (_) {
+          // Si no podemos parsear el JSON, usamos el mensaje genérico
+        }
+        throw new Error(errorMessage);
       }
 
+      // Actualizamos la UI después de una eliminación exitosa
       showToast("Trade eliminado correctamente", "success");
-      fetchTrades();
+      
+      // Refrescar los trades después de un pequeño retardo
+      setTimeout(() => {
+        fetchTrades();
+      }, 500);
     } catch (error) {
       console.error("Error al eliminar:", error);
-      showToast("Error al eliminar el trade", "error");
+      // No mostramos toast aquí porque ya lo manejamos en el componente TradeCard
     }
   };
 
@@ -147,13 +241,18 @@ export default function TradesPage() {
   };
 
   const handleDeleteSelected = async () => {
+    // Cerrar el diálogo primero
     setIsDeleteDialogOpen(false);
+    
+    // Agregar un pequeño retraso para permitir que se cierre el diálogo
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     let successCount = 0;
     let errorCount = 0;
+    let lastErrorMessage = "Error desconocido";
     
-    // Mostrar mensaje de inicio
-    showToast('Eliminando ' + selectedTrades.length + ' trades...', 'info');
+    // Mostrar mensaje de inicio con duración corta
+    showToast(`Eliminando ${selectedTrades.length} trades...`, 'info');
     
     // Eliminar cada trade seleccionado
     for (const id of selectedTrades) {
@@ -165,27 +264,41 @@ export default function TradesPage() {
         if (response.ok) {
           successCount++;
         } else {
+          try {
+            const errorData = await response.json();
+            if (errorData?.error) {
+              lastErrorMessage = errorData.error;
+            }
+          } catch (_) {
+            // Si no podemos parsear el JSON, usamos el mensaje genérico
+          }
           errorCount++;
         }
       } catch (error) {
         console.error(`Error al eliminar trade ${id}:`, error);
+        if (error instanceof Error) {
+          lastErrorMessage = error.message;
+        }
         errorCount++;
       }
     }
     
-    // Mostrar resultados
-    if (errorCount === 0) {
-      showToast(`${successCount} trades eliminados correctamente`, "success");
-    } else if (successCount === 0) {
-      showToast(`Error al eliminar los trades`, "error");
-    } else {
-      showToast(`${successCount} trades eliminados, ${errorCount} errores`, "warning");
-    }
-    
     // Refrescar la lista y limpiar selección
-    fetchTrades();
+    await fetchTrades();
     setSelectedTrades([]);
     setSelectionMode(false);
+    
+    // Agregar un pequeño retraso para mostrar el resultado después de actualizar la UI
+    setTimeout(() => {
+      // Mostrar resultados con duración más larga
+      if (errorCount === 0) {
+        showToast(`${successCount} trades eliminados correctamente`, "success");
+      } else if (successCount === 0) {
+        showToast(`Error al eliminar trades: ${lastErrorMessage}`, "error");
+      } else {
+        showToast(`${successCount} trades eliminados, ${errorCount} errores`, "warning");
+      }
+    }, 500);
   };
 
   const toggleSelectionMode = () => {
@@ -197,63 +310,122 @@ export default function TradesPage() {
 
   // Función de éxito del modal eliminada - ahora se maneja en las páginas completas
 
+  // Manejar exportación de datos
+  const handleExport = (format: 'excel' | 'csv' | 'pdf') => {
+    if (filteredTrades.length === 0) {
+      showToast("No hay trades para exportar", "error");
+      return;
+    }
+    
+    try {
+      const fileName = `supatrades_${format === 'excel' ? 'xlsx' : format}`;
+      
+      switch (format) {
+        case 'excel':
+          exportToExcel(filteredTrades, fileName);
+          break;
+        case 'csv':
+          exportToCSV(filteredTrades, fileName);
+          break;
+        case 'pdf':
+          exportToPDF(filteredTrades, fileName);
+          break;
+      }
+      
+      showToast(`Exportación a ${format.toUpperCase()} completada`, "success");
+    } catch (error) {
+      console.error(`Error al exportar a ${format}:`, error);
+      showToast(`Error al exportar a ${format}`, "error");
+    }
+  };
+  
+  // Manejar guardado de filtros
+  const handleSaveFilter = (name: string, filters: TradeFilters) => {
+    setSavedFilters([...savedFilters, { name, filters }]);
+    showToast(`Filtro "${name}" guardado correctamente`, "success");
+  };
+  
+  // Manejar carga de filtros
+  const handleLoadFilter = (filters: TradeFilters) => {
+    setAdvancedFilters(filters);
+    showToast("Filtro aplicado", "success");
+  };
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Trades</h1>
-          <p className="text-sm text-gray-400">
-            Aquí puedes ver y gestionar todos tus trades registrados.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {selectionMode ? (
-            <>
-              <Button 
-                onClick={toggleSelectionMode}
-                variant="outline"
-                className="border-gray-800 hover:bg-gray-800"
-              >
-                <X className="h-5 w-5 mr-1" />
-                Cancelar
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-white">Trades</h1>
+        <div className="flex space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
               </Button>
-              <Button 
-                onClick={() => setIsDeleteDialogOpen(true)}
-                variant="destructive"
-                disabled={selectedTrades.length === 0}
-                className="hover:bg-red-600"
-              >
-                <Trash2 className="h-5 w-5 mr-1" />
-                Eliminar ({selectedTrades.length})
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button 
-                onClick={toggleSelectionMode}
-                className="bg-[#1c1c1c] hover:bg-[#2a2a2a] text-white rounded-lg px-4 py-2 h-10 font-medium border border-gray-800/50 hover:border-gray-700/50 transition-all flex items-center gap-2"
-              >
-                <Check className="h-5 w-5" />
-                Seleccionar
-              </Button>
-              <Button 
-                onClick={() => router.push('/trades/new')}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 h-10 font-medium transition-all flex items-center gap-2"
-              >
-                <Plus className="h-5 w-5" />
-                Nuevo Trade
-              </Button>
-            </>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('excel')}>
+                Exportar a Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('csv')}>
+                Exportar a CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                Exportar a PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => router.push('/trades/new')} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Trade
+          </Button>
+          {filteredTrades.length > 0 && (
+            <Button
+              onClick={toggleSelectionMode}
+              variant={selectionMode ? "default" : "outline"}
+              size="sm"
+            >
+              {selectionMode ? (
+                <>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar selección
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Seleccionar
+                </>
+              )}
+            </Button>
           )}
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
-        <TradeFilter value={filterValue} onChange={setFilterValue} />
-        <span className="text-sm text-gray-400">
-          {filteredTrades.length} {filteredTrades.length === 1 ? 'trade' : 'trades'}
-        </span>
-      </div>
+      <TradeFilter 
+        value={filterValue} 
+        onChange={setFilterValue} 
+        onFilterChange={(type, value) => {
+          setAdvancedFilters(prev => ({
+            ...prev,
+            [type]: value || undefined
+          }));
+        }}
+        tradingPairs={tradingPairs}
+        accounts={tradingAccounts}
+      />
+
+      <AdvancedTradeFilter
+        onFiltersChange={setAdvancedFilters}
+        tradingPairs={tradingPairs}
+        accounts={tradingAccounts}
+        onSaveFilter={handleSaveFilter}
+        savedFilters={savedFilters}
+        onLoadFilter={handleLoadFilter}
+      />
+
+      <span className="text-sm text-gray-400">
+        {filteredTrades.length} {filteredTrades.length === 1 ? 'trade' : 'trades'}
+      </span>
       
       {error ? (
         <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
@@ -283,19 +455,19 @@ export default function TradesPage() {
 
       {/* Diálogo de confirmación para eliminación múltiple */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-zinc-900 text-white border border-zinc-800 shadow-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg">Eliminar trades seleccionados</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg text-zinc-100">Eliminar trades seleccionados</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
               ¿Estás seguro de que quieres eliminar {selectedTrades.length} {selectedTrades.length === 1 ? 'trade' : 'trades'}?
               Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSelected}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-red-600 text-white hover:bg-red-700"
             >
               Eliminar
             </AlertDialogAction>

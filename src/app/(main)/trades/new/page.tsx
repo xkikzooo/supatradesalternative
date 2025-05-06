@@ -18,6 +18,14 @@ interface TradingPair {
   name: string;
 }
 
+interface TradingAccount {
+  id: string;
+  name: string;
+  broker: string;
+  balance: number;
+  type: string;
+}
+
 export default function NewTradePage() {
   const router = useRouter();
   
@@ -37,7 +45,7 @@ export default function NewTradePage() {
   
   const dataFetchedRef = useRef<boolean>(false);
   const [tradingPairs, setTradingPairs] = useState<TradingPair[]>([]);
-  const [accounts, setAccounts] = useState([]);
+  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -55,7 +63,7 @@ export default function NewTradePage() {
     riskAmount: 0,
     images: [] as string[],
     date: new Date().toISOString().split('T')[0],
-    accountId: '',
+    accountIds: [] as string[],
   });
 
   const loadInitialData = async () => {
@@ -99,13 +107,9 @@ export default function NewTradePage() {
       setAccounts(data || []);
       
       // Si no hay cuenta seleccionada y hay cuentas disponibles, seleccionar la primera
-      if (data?.length > 0) {
+      if (data?.length > 0 && formData.accountIds.length === 0) {
         setFormData(prev => {
-          // Solo actualizar si no hay un accountId seleccionado
-          if (!prev.accountId) {
-            return { ...prev, accountId: data[0].id };
-          }
-          return prev;
+          return { ...prev, accountIds: [data[0].id] };
         });
       }
     } catch (error) {
@@ -127,8 +131,8 @@ export default function NewTradePage() {
         return;
       }
 
-      if (!formData.accountId) {
-        showToast('Debes seleccionar una cuenta', 'error');
+      if (!formData.accountIds.length) {
+        showToast('Debes seleccionar al menos una cuenta', 'error');
         setIsSubmitting(false);
         return;
       }
@@ -154,7 +158,7 @@ export default function NewTradePage() {
         riskAmount: formData.riskAmount,
         images: formData.images,
         date: date.toISOString(),
-        accountId: formData.accountId
+        accountIds: formData.accountIds
       };
 
       const response = await fetch('/api/trades', {
@@ -312,38 +316,90 @@ export default function NewTradePage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-gray-300">Cuenta</Label>
-                <Select
-                  value={formData.accountId}
-                  onValueChange={(value) => {
-                    if (value === 'create_account') {
-                      router.push('/accounts');
-                      return;
-                    }
-                    setFormData((prev) => ({ ...prev, accountId: value }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.length > 0 ? (
-                      accounts.map((account: any) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name} ({account.broker})
+                <Label className="text-gray-300">Cuentas</Label>
+                <div className="relative">
+                  <Select
+                    value="_multiple_"
+                    onValueChange={(value) => {
+                      if (value === 'create_account') {
+                        router.push('/accounts');
+                        return;
+                      }
+                      
+                      // Si la cuenta ya está seleccionada, la quitamos
+                      if (formData.accountIds.includes(value)) {
+                        setFormData(prev => ({
+                          ...prev,
+                          accountIds: prev.accountIds.filter(id => id !== value)
+                        }));
+                      } else {
+                        // Si no está seleccionada, la agregamos
+                        setFormData(prev => ({
+                          ...prev,
+                          accountIds: [...prev.accountIds, value]
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona cuentas">
+                        {formData.accountIds.length === 0 ? 
+                          "Selecciona cuentas" : 
+                          `${formData.accountIds.length} cuenta${formData.accountIds.length !== 1 ? 's' : ''} seleccionada${formData.accountIds.length !== 1 ? 's' : ''}`
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.length > 0 ? (
+                        accounts.map((account: any) => (
+                          <SelectItem 
+                            key={account.id} 
+                            value={account.id}
+                            className="flex items-center gap-2"
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <input
+                                type="checkbox"
+                                checked={formData.accountIds.includes(account.id)}
+                                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600"
+                                readOnly
+                              />
+                              <span>{account.name} ({account.broker})</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem 
+                          value="create_account" 
+                          className="flex items-center justify-center gap-2 text-blue-400 font-medium p-2 m-1 rounded-md hover:bg-blue-500/10 hover:text-blue-300 transition-colors cursor-pointer border border-blue-500/20"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Crear nueva cuenta
                         </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem 
-                        value="create_account" 
-                        className="flex items-center justify-center gap-2 text-blue-400 font-medium p-2 m-1 rounded-md hover:bg-blue-500/10 hover:text-blue-300 transition-colors cursor-pointer border border-blue-500/20"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Crear nueva cuenta
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.accountIds.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {formData.accountIds.map(id => {
+                        const account = accounts.find((a: any) => a.id === id);
+                        return account ? (
+                          <div key={id} className="bg-gray-800 text-gray-200 text-xs px-2 py-1 rounded-md flex items-center gap-1">
+                            <span>{account.name}</span>
+                            <X 
+                              className="h-3 w-3 cursor-pointer hover:text-white" 
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                accountIds: prev.accountIds.filter(accId => accId !== id)
+                              }))}
+                            />
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

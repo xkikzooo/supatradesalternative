@@ -54,6 +54,8 @@ model User {
   sessions      Session[]
   trades        Trade[]
   tradingAccounts TradingAccount[]
+  subscriptions   Subscription[]
+  invoices        Invoice[]
 }
 
 model VerificationToken {
@@ -115,6 +117,41 @@ model Trade {
   @@index([accountId])
 }
 
+model Subscription {
+  id                String             @id @default(cuid())
+  paddleId          String             @unique // ID de suscripción de Paddle
+  status            SubscriptionStatus
+  planId            String             // ID del plan en Paddle
+  planName          String             // Nombre del plan (ej. Mensual, Anual)
+  nextBillingDate   DateTime?
+  canceledAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices          Invoice[]
+
+  @@index([userId])
+}
+
+model Invoice {
+  id                String         @id @default(cuid())
+  paddleId          String         @unique // ID de factura de Paddle
+  status            InvoiceStatus
+  amount            Float
+  currency          String
+  paidAt            DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  subscriptionId    String
+  subscription      Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([userId])
+}
+
 enum TradeDirection {
   LONG
   SHORT
@@ -130,4 +167,19 @@ enum TradeResult {
   WIN
   LOSS
   BREAKEVEN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  PAUSED
+  CANCELED
+}
+
+enum InvoiceStatus {
+  PAID
+  UNPAID
+  PENDING
+  REFUNDED
 }

@@ -77,11 +77,25 @@ export function TradeCard({
 
   const handleDelete = async () => {
     try {
+      // Cerrar el diálogo primero para evitar interacciones durante la eliminación
+      setIsDeleteDialogOpen(false);
+      
+      // Pequeño retraso para permitir que la animación del diálogo termine
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Llamar a la función onDelete proporcionada por el componente padre
+      // No mostramos toast aquí para evitar duplicación
       await onDelete(id);
-      showToast("Trade eliminado correctamente", "success");
+      
+      // No mostrar toast aquí, el componente padre ya se encarga de eso
     } catch (error) {
-      showToast("Error al eliminar el trade", "error");
       console.error("Error al eliminar:", error);
+      
+      // En caso de error sí mostramos el toast aquí
+      showToast(
+        error instanceof Error ? error.message : "Error al eliminar el trade", 
+        "error"
+      );
     }
   };
 
@@ -243,7 +257,7 @@ export function TradeCard({
 
       {/* Modal de confirmación de eliminación */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-zinc-900 border border-zinc-800 shadow-xl">
+        <AlertDialogContent className="bg-zinc-900 text-white border border-zinc-800 shadow-xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-zinc-100">
               <AlertOctagon className="h-6 w-6 text-red-500 animate-pulse" />
