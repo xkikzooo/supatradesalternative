@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
@@ -10,6 +10,15 @@ import { Check } from 'lucide-react';
  */
 export default function SubscriptionPlans() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
+  const [isCheckoutSubdomain, setIsCheckoutSubdomain] = useState(false);
+  
+  useEffect(() => {
+    // Verificar si estamos en el subdominio checkout.supatrades.app
+    if (typeof window !== 'undefined') {
+      const host = window.location.host;
+      setIsCheckoutSubdomain(host === 'checkout.supatrades.app');
+    }
+  }, []);
   
   const plans = [
     {
@@ -157,7 +166,7 @@ export default function SubscriptionPlans() {
           <p>
             Todos los planes incluyen una garantía de devolución de 14 días.
             <br />
-            ¿Tienes preguntas? Consulta nuestras <a href="/checkout/faq" className="text-[#00A3FF] hover:underline">Preguntas Frecuentes</a>
+            ¿Tienes preguntas? Consulta nuestras <a href={isCheckoutSubdomain ? "/faq" : "/checkout/faq"} className="text-[#00A3FF] hover:underline">Preguntas Frecuentes</a>
           </p>
         </div>
       </div>

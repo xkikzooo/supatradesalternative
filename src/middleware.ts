@@ -7,13 +7,24 @@ export function middleware(request: NextRequest) {
 
   // Manejar el subdominio checkout.supatrades.app
   if (host === 'checkout.supatrades.app') {
-    // Si es la ruta raíz, reescribir internamente a /checkout sin cambiar la URL visible
-    if (url.pathname === '/') {
-      url.pathname = '/checkout';
+    // Mapeo de rutas para el subdominio
+    const routeMapping: Record<string, string> = {
+      '/': '/checkout',
+      '/faq': '/checkout/faq',
+      '/terms': '/checkout/terms',
+      '/privacy': '/checkout/privacy',
+      '/refund': '/checkout/refund'
+    };
+
+    // Verificar si la URL actual tiene un mapeo
+    if (routeMapping[url.pathname]) {
+      // Reescribir internamente a la ruta correspondiente sin cambiar la URL visible
+      const newPath = routeMapping[url.pathname];
+      url.pathname = newPath;
       return NextResponse.rewrite(url);
     }
     
-    // Permitir rutas específicas de checkout
+    // Permitir rutas específicas de checkout (por si alguien accede directamente a ellas)
     if (url.pathname === '/checkout' || 
         url.pathname === '/checkout/faq' || 
         url.pathname === '/checkout/terms' || 

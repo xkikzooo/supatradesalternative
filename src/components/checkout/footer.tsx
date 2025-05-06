@@ -39,22 +39,22 @@ export default function CheckoutFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/checkout/faq" className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
+                <Link href={isCheckoutSubdomain ? "/faq" : "/checkout/faq"} className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
                   Preguntas Frecuentes
                 </Link>
               </li>
               <li>
-                <Link href="/checkout/terms" className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
+                <Link href={isCheckoutSubdomain ? "/terms" : "/checkout/terms"} className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
                   Términos de Servicio
                 </Link>
               </li>
               <li>
-                <Link href="/checkout/privacy" className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
+                <Link href={isCheckoutSubdomain ? "/privacy" : "/checkout/privacy"} className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
                   Política de Privacidad
                 </Link>
               </li>
               <li>
-                <Link href="/checkout/refund" className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
+                <Link href={isCheckoutSubdomain ? "/refund" : "/checkout/refund"} className="text-sm text-gray-400 hover:text-[#00A3FF] transition-colors">
                   Política de Reembolso
                 </Link>
               </li>

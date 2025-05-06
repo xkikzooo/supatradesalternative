@@ -37,13 +37,13 @@ export default function CheckoutHeader() {
           <Link href={isCheckoutSubdomain ? "/" : "/checkout"} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
             Planes
           </Link>
-          <Link href="/checkout/faq" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+          <Link href={isCheckoutSubdomain ? "/faq" : "/checkout/faq"} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
             FAQ
           </Link>
-          <Link href="/checkout/terms" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+          <Link href={isCheckoutSubdomain ? "/terms" : "/checkout/terms"} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
             Términos de Servicio
           </Link>
-          <Link href="/checkout/privacy" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+          <Link href={isCheckoutSubdomain ? "/privacy" : "/checkout/privacy"} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
             Privacidad
           </Link>
         </nav>
