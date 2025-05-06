@@ -4,14 +4,24 @@
   "framework": "nextjs",
   "rewrites": [
     { 
-      "source": "/", 
-      "destination": "/checkout",
+      "source": "/(.*)",
+      "destination": "/checkout", 
       "has": [
         { 
           "type": "host", 
           "value": "checkout.supatrades.app" 
         }
-      ] 
+      ]
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/checkout",
+      "has": [
+        {
+          "type": "host",
+          "value": "checkout.supatrades.app"
+        }
+      ]
     }
   ]
 } 
