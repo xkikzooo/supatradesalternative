@@ -12,6 +12,7 @@ import { showToast } from '@/lib/toast';
 import { X, Plus, ArrowLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
+import { cn } from "@/lib/utils";
 
 interface TradingPair {
   id: string;
@@ -49,6 +50,7 @@ export default function NewTradePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [dateString, setDateString] = useState<string>(new Date().toISOString().split('T')[0]);
   const [newPair, setNewPair] = useState("");
   const [showNewPairInput, setShowNewPairInput] = useState(false);
 
@@ -81,6 +83,13 @@ export default function NewTradePage() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  // Sincronizar dateString y date
+  useEffect(() => {
+    if (dateString) {
+      setDate(new Date(dateString));
+    }
+  }, [dateString]);
 
   const fetchTradingPairs = async () => {
     try {
@@ -242,7 +251,19 @@ export default function NewTradePage() {
             <div className="space-y-6 flex-1">
               <div className="space-y-2">
                 <Label className="text-gray-300">Fecha</Label>
-                <DatePicker date={date} setDate={setDate} />
+                <Input
+                  type="date"
+                  value={dateString}
+                  onChange={(e) => setDateString(e.target.value)}
+                  className={cn(
+                    "w-full",
+                    "bg-gradient-to-b from-gray-900 to-gray-800",
+                    "border border-gray-700 shadow-sm",
+                    "hover:bg-gradient-to-b hover:from-gray-800 hover:to-gray-700",
+                    "hover:border-blue-500/50 hover:shadow-blue-500/20 hover:shadow-md",
+                    "transition-all duration-200"
+                  )}
+                />
               </div>
               
               <div className="space-y-2">
