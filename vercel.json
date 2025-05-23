@@ -1,27 +1,5 @@
 {
   "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "rewrites": [
-    { 
-      "source": "/(.*)",
-      "destination": "/checkout", 
-      "has": [
-        { 
-          "type": "host", 
-          "value": "checkout.supatrades.app" 
-        }
-      ]
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/checkout",
-      "has": [
-        {
-          "type": "host",
-          "value": "checkout.supatrades.app"
-        }
-      ]
-    }
-  ]
+  "framework": "nextjs"
 } 

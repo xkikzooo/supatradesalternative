@@ -1,0 +1,27 @@
+name: Database Health Check
+
+on:
+  schedule:
+    # Ejecutar cada día a las 12:00 UTC
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Permite ejecutar manualmente el workflow
+
+jobs:
+  health_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health Check Request
+        run: |
+          curl -X GET "https://supatrades.vercel.app/api/health-check" \
+          -H "Content-Type: application/json" \
+          --fail \
+          --retry 3
+        
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+          -H "Content-Type: application/json" \
+          -d '{
+            "content": "⚠️ ¡Alerta! El health check de la base de datos ha fallado. Por favor, verifica el estado de la conexión."
+          }' 
