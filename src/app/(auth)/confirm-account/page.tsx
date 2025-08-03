@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Mail, ArrowLeft, RefreshCw } from 'lucide-react';
 
 // Componente con la funcionalidad de confirmación
 function ConfirmAccountContent() {
@@ -134,7 +135,7 @@ function ConfirmAccountContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950 px-4 py-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4 py-8">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <Image
@@ -145,75 +146,98 @@ function ConfirmAccountContent() {
             className="mb-6"
             priority
           />
-          <div className="bg-gray-800/40 backdrop-blur-sm w-full rounded-xl shadow-2xl p-8 border border-gray-800">
-            <h2 className="text-2xl font-bold tracking-tight text-white text-center mb-4">
+        </div>
+        <div className="bg-white/5 backdrop-blur-xl w-full rounded-2xl shadow-2xl p-8 border border-white/10">
+          <div className="flex items-center gap-3 mb-6">
+            <Mail className="h-6 w-6 text-blue-400" />
+            <h2 className="text-2xl font-bold tracking-tight text-white">
               Confirma tu cuenta
             </h2>
-            <p className="mb-6 text-sm text-gray-400 text-center">
-              Hemos enviado un código de verificación de 6 dígitos a tu correo electrónico.
-              {email && <span className="block font-semibold text-blue-400 mt-1">{email}</span>}
-            </p>
-
-            <form className="space-y-5" onSubmit={handleVerifyCode}>
-              {error && (
-                <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
-              
-              {success && (
-                <div className="rounded-lg bg-green-500/10 p-4 text-sm text-green-400">
-                  {success}
-                </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="verification-code"
-                  className="block text-sm font-medium text-gray-300 mb-1"
-                >
-                  Código de verificación
-                </label>
-                <input
-                  id="verification-code"
-                  name="verification-code"
-                  type="text"
-                  required
-                  maxLength={6}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all text-center text-xl tracking-widest"
-                  placeholder="000000"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || verificationCode.length !== 6}
-                className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors mt-6"
-              >
-                {isLoading ? 'Verificando...' : 'Verificar cuenta'}
-              </button>
-              
-              <div className="text-center mt-4">
-                <p className="text-sm text-gray-400 mb-2">
-                  ¿No recibiste el código?
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResendCode}
-                  disabled={!canResend || isLoading}
-                  className={`text-sm ${canResend ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500'} transition-colors`}
-                >
-                  {canResend 
-                    ? 'Reenviar código' 
-                    : `Reenviar código en ${countdown} segundos`}
-                </button>
-              </div>
-            </form>
           </div>
+          
+          <p className="mb-6 text-sm text-white/70 text-center">
+            Hemos enviado un código de verificación de 6 dígitos a tu correo electrónico.
+            {email && <span className="block font-semibold text-blue-400 mt-2">{email}</span>}
+          </p>
+
+          <form className="space-y-5" onSubmit={handleVerifyCode}>
+            {error && (
+              <div className="rounded-xl p-4 text-sm bg-red-500/10 text-red-300 border border-red-500/20 backdrop-blur-sm">
+                {error}
+              </div>
+            )}
+            
+            {success && (
+              <div className="rounded-xl p-4 text-sm bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 backdrop-blur-sm">
+                {success}
+              </div>
+            )}
+
+            <div>
+              <label
+                htmlFor="verification-code"
+                className="block text-sm font-medium text-white/80 mb-2"
+              >
+                Código de verificación
+              </label>
+              <input
+                id="verification-code"
+                name="verification-code"
+                type="text"
+                required
+                maxLength={6}
+                inputMode="numeric"
+                autoComplete="off"
+                className="block w-full rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200 text-center text-xl tracking-widest"
+                placeholder="000000"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading || verificationCode.length !== 6}
+              className="w-full bg-blue-500/80 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isLoading ? 'Verificando...' : 'Verificar cuenta'}
+            </button>
+            
+            <div className="text-center">
+              <p className="text-sm text-white/60 mb-3">
+                ¿No recibiste el código?
+              </p>
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={!canResend || isLoading}
+                className={`text-sm flex items-center justify-center gap-2 mx-auto ${
+                  canResend 
+                    ? 'text-blue-400 hover:text-blue-300' 
+                    : 'text-white/40'
+                } transition-colors`}
+              >
+                {canResend ? (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Reenviar código
+                  </>
+                ) : (
+                  `Reenviar código en ${countdown} segundos`
+                )}
+              </button>
+            </div>
+
+            <div className="pt-4 border-t border-white/10">
+              <Link
+                href="/login"
+                className="flex items-center justify-center gap-2 text-sm text-white/60 hover:text-white/80 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver al login
+              </Link>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -224,10 +248,10 @@ function ConfirmAccountContent() {
 export default function ConfirmAccountPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950">
+      <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
-          <p className="mt-4 text-gray-400">Cargando...</p>
+          <p className="mt-4 text-white/60">Cargando...</p>
         </div>
       </div>
     }>

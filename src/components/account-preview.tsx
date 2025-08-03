@@ -42,12 +42,16 @@ export function AccountPreview() {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-4">Cargando cuentas...</div>;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-white/60">Cargando cuentas...</div>
+      </div>
+    );
   }
 
   if (accounts.length === 0) {
     return (
-      <div className="text-center text-gray-400 p-4">
+      <div className="text-center text-white/60 p-6 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
         No hay cuentas registradas. Añade cuentas para gestionarlas aquí.
       </div>
     );
@@ -62,33 +66,33 @@ export function AccountPreview() {
         return (
           <div
             key={account.id}
-            className="p-4 border border-gray-800 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors cursor-pointer"
+            className="p-4 border border-white/10 rounded-xl bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer hover:scale-[1.02]"
             onClick={() => router.push(`/accounts?id=${account.id}`)}
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-white">{account.name}</h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <h3 className="text-sm font-semibold text-white">{account.name}</h3>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30 backdrop-blur-sm">
                     {account.broker}
                   </span>
                   <span className={cn(
-                    "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium",
+                    "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm",
                     account.type === "Fondeada" 
-                      ? "bg-green-500/10 text-green-400 border border-green-500/20" 
-                      : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" 
+                      : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                   )}>
                     {account.type}
                   </span>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-base font-medium text-white">
+                <div className="text-base font-bold text-white">
                   {formatCurrency(account.balance)}
                 </div>
                 <div className={cn(
-                  "text-xs",
-                  isPositive ? "text-green-400" : "text-red-400"
+                  "text-xs font-medium",
+                  isPositive ? "text-emerald-300" : "text-rose-300"
                 )}>
                   {isPositive ? '+' : ''}{percentageChange.toFixed(2)}%
                 </div>

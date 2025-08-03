@@ -11,7 +11,10 @@ import {
   LogOut,
   Wallet,
   MoreVertical,
-  Plus
+  Plus,
+  User,
+  Shield,
+  Bell
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuContent, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -28,83 +31,75 @@ export function Sidebar() {
   };
 
   return (
-    <div className="fixed left-0 top-0 flex h-screen flex-col justify-between border-r border-gray-800 bg-black/50 w-52">
+    <div className="fixed left-0 top-0 flex h-screen flex-col justify-between border-r border-white/10 bg-black/50 backdrop-blur-xl w-52">
       <div className="px-3 py-6">
-        <div className="flex justify-center items-center h-10 rounded-lg bg-gray-800/50">
+        <div className="flex items-center gap-2 mb-8">
           <Image
             src="/supatrades.svg"
-            alt="SupaTrades Logo"
+            alt="Supatrades Logo"
             width={120}
-            height={30}
-            priority
+            height={36}
+            className="h-8 w-auto"
           />
         </div>
-
-        <button
-          onClick={() => router.push('/trades/new')}
-          className="mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-blue-500/80 text-white transition-all hover:bg-blue-600/90 text-sm font-medium"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo Trade
-        </button>
-
-        <nav className="mt-6 flex flex-1 flex-col">
-          <div className="space-y-1">
-            <Link
-              href="/dashboard"
-              className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-gray-300 text-sm',
-                pathname === '/dashboard' ? 'bg-gray-800/50 text-gray-300' : 'hover:bg-gray-800/50'
-              )}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <Link
-              href="/trades"
-              className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-gray-300 text-sm',
-                pathname === '/trades' ? 'bg-gray-800/50 text-gray-300' : 'hover:bg-gray-800/50'
-              )}
-            >
-              <LineChart className="h-4 w-4" />
-              Trades
-            </Link>
-            <Link
-              href="/calendar"
-              className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-gray-300 text-sm',
-                pathname === '/calendar' ? 'bg-gray-800/50 text-gray-300' : 'hover:bg-gray-800/50'
-              )}
-            >
-              <Calendar className="h-4 w-4" />
-              Calendario
-            </Link>
-            
-            <Link
-              href="/accounts"
-              className={cn(
-                'flex items-center gap-2 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-gray-300 text-sm',
-                pathname === '/accounts' ? 'bg-gray-800/50 text-gray-300' : 'hover:bg-gray-800/50'
-              )}
-            >
-              <Wallet className="h-4 w-4" />
-              Cuentas
-            </Link>
-          </div>
+        
+        <nav className="space-y-2">
+          <Link
+            href="/dashboard"
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/70 transition-all duration-200 hover:text-white hover:bg-white/10 text-sm font-medium',
+              pathname === '/dashboard' ? 'bg-white/10 text-white border border-white/20' : 'hover:border-white/20'
+            )}
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
+          </Link>
+          
+          <Link
+            href="/trades"
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/70 transition-all duration-200 hover:text-white hover:bg-white/10 text-sm font-medium',
+              pathname === '/trades' ? 'bg-white/10 text-white border border-white/20' : 'hover:border-white/20'
+            )}
+          >
+            <LineChart className="h-4 w-4" />
+            Trades
+          </Link>
+          
+          <Link
+            href="/calendar"
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/70 transition-all duration-200 hover:text-white hover:bg-white/10 text-sm font-medium',
+              pathname === '/calendar' ? 'bg-white/10 text-white border border-white/20' : 'hover:border-white/20'
+            )}
+          >
+            <Calendar className="h-4 w-4" />
+            Calendario
+          </Link>
+          
+          <Link
+            href="/accounts"
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/70 transition-all duration-200 hover:text-white hover:bg-white/10 text-sm font-medium',
+              pathname === '/accounts' ? 'bg-white/10 text-white border border-white/20' : 'hover:border-white/20'
+            )}
+          >
+            <Wallet className="h-4 w-4" />
+            Cuentas
+          </Link>
         </nav>
       </div>
 
-      <div className="border-t border-gray-800 p-3">
+      <div className="border-t border-white/10 p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center">
-              <span className="text-xs font-medium text-white">
-                {session?.user?.name?.[0] || 'U'}
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <span className="text-xs font-bold text-white">
+                {session?.user?.name?.[0]?.toUpperCase() || 'U'}
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-200">
+              <span className="text-sm font-medium text-white">
                 {session?.user?.name || 'Usuario'}
               </span>
             </div>
@@ -112,21 +107,59 @@ export function Sidebar() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="h-7 w-7 flex items-center justify-center text-gray-400 hover:text-gray-300 rounded-full hover:bg-gray-800/50">
+              <button className="h-8 w-8 flex items-center justify-center text-white/60 hover:text-white rounded-xl hover:bg-white/10 transition-all duration-200">
                 <MoreVertical className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 bg-gray-900/95 border border-gray-800 text-gray-300">
+            <DropdownMenuContent 
+              align="end" 
+              className="w-56 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl"
+            >
               <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex items-center gap-2 cursor-pointer hover:bg-gray-800/50">
+                <Link 
+                  href="/settings" 
+                  className="flex items-center gap-3 cursor-pointer hover:bg-white/10 text-white/80 hover:text-white transition-all duration-200"
+                >
                   <Settings className="h-4 w-4" />
                   <span>Configuración</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-800" />
+              
+              <DropdownMenuItem asChild>
+                <Link 
+                  href="/profile" 
+                  className="flex items-center gap-3 cursor-pointer hover:bg-white/10 text-white/80 hover:text-white transition-all duration-200"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Perfil</span>
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem asChild>
+                <Link 
+                  href="/notifications" 
+                  className="flex items-center gap-3 cursor-pointer hover:bg-white/10 text-white/80 hover:text-white transition-all duration-200"
+                >
+                  <Bell className="h-4 w-4" />
+                  <span>Notificaciones</span>
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem asChild>
+                <Link 
+                  href="/security" 
+                  className="flex items-center gap-3 cursor-pointer hover:bg-white/10 text-white/80 hover:text-white transition-all duration-200"
+                >
+                  <Shield className="h-4 w-4" />
+                  <span>Seguridad</span>
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator className="bg-white/10" />
+              
               <DropdownMenuItem 
                 onClick={handleSignOut}
-                className="flex items-center gap-2 cursor-pointer text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400"
+                className="flex items-center gap-3 cursor-pointer text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400 transition-all duration-200"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Cerrar sesión</span>

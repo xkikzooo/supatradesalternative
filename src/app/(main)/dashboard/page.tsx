@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { formatCurrency } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus, Percent, ChevronRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Percent, ChevronRight, DollarSign, Target, BarChart3 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { AccountPreview } from "@/components/account-preview";
 import { RecentTradesTable } from "@/components/recent-trades-table";
 import { calculateMaxDrawdown, calculateSharpeRatio, calculateSortinoRatio, calculateProfitFactor, calculateExpectancy } from "@/lib/financial-metrics";
 import { TradingGoals } from "@/components/trading-goals";
+import { cn } from "@/lib/utils";
 
 interface Trade {
   id: string;
@@ -138,95 +139,117 @@ export default function DashboardPage() {
   };
 
   if (status === 'loading') {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-white/60 text-lg">Cargando dashboard...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-gray-400">
+    <div className="flex flex-col gap-8">
+      {/* Header */}
+      <div className="p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
+        <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
+        <p className="text-white/70">
           Vista general de tu rendimiento en trading
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card>
+      {/* Stats Cards */}
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 aspect-square">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Ganancia Total</CardTitle>
+            <CardTitle className="text-xs font-medium text-white/70">Ganancia Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-emerald-400" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalPnL)}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Winrate</CardTitle>
-            <Percent className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.winrate.toFixed(1)}%</div>
-            <p className="text-xs text-gray-400">
-              De {stats.winningTrades + stats.losingTrades} trades
+          <CardContent className="pt-0">
+            <div className={cn(
+              "text-lg font-bold",
+              stats.totalPnL > 0 ? "text-emerald-300" : "text-rose-300"
+            )}>
+              {formatCurrency(stats.totalPnL)}
+            </div>
+            <p className="text-xs text-white/60 mt-1">
+              {stats.totalTrades} trades
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 aspect-square">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Factor de beneficio</CardTitle>
+            <CardTitle className="text-xs font-medium text-white/70">Winrate</CardTitle>
+            <Target className="h-4 w-4 text-blue-400" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{advancedStats.profitFactor.toFixed(2)}</div>
-            <p className="text-xs text-gray-400">Relación ganancia/pérdida</p>
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold text-white">{stats.winrate.toFixed(1)}%</div>
+            <p className="text-xs text-white/60 mt-1">
+              {stats.winningTrades + stats.losingTrades} trades
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 aspect-square">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Expectativa</CardTitle>
+            <CardTitle className="text-xs font-medium text-white/70">Factor de beneficio</CardTitle>
+            <BarChart3 className="h-4 w-4 text-purple-400" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">${advancedStats.expectancy.toFixed(2)}</div>
-            <p className="text-xs text-gray-400">Ganancia esperada por trade</p>
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold text-white">{advancedStats.profitFactor.toFixed(2)}</div>
+            <p className="text-xs text-white/60 mt-1">Ganancia/pérdida</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 aspect-square">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Trades Ganadores</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-xs font-medium text-white/70">Expectativa</CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-400" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.winningTrades}</div>
-            <p className="text-xs text-gray-400">
+          <CardContent className="pt-0">
+            <div className={cn(
+              "text-lg font-bold",
+              advancedStats.expectancy > 0 ? "text-emerald-300" : "text-rose-300"
+            )}>
+              ${advancedStats.expectancy.toFixed(2)}
+            </div>
+            <p className="text-xs text-white/60 mt-1">Por trade</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 aspect-square">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium text-white/70">Trades Ganadores</CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-400" />
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold text-emerald-300">{stats.winningTrades}</div>
+            <p className="text-xs text-white/60 mt-1">
               {((stats.winningTrades / stats.totalTrades) * 100).toFixed(1)}% del total
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 aspect-square">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Trades Perdedores</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-500" />
+            <CardTitle className="text-xs font-medium text-white/70">Trades Perdedores</CardTitle>
+            <TrendingDown className="h-4 w-4 text-rose-400" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.losingTrades}</div>
-            <p className="text-xs text-gray-400">
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold text-rose-300">{stats.losingTrades}</div>
+            <p className="text-xs text-white/60 mt-1">
               {((stats.losingTrades / stats.totalTrades) * 100).toFixed(1)}% del total
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300 aspect-square">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Breakeven</CardTitle>
-            <Minus className="h-4 w-4 text-yellow-500" />
+            <CardTitle className="text-xs font-medium text-white/70">Breakeven</CardTitle>
+            <Minus className="h-4 w-4 text-amber-400" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.breakEvenTrades}</div>
-            <p className="text-xs text-gray-400">
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold text-amber-300">{stats.breakEvenTrades}</div>
+            <p className="text-xs text-white/60 mt-1">
               {((stats.breakEvenTrades / stats.totalTrades) * 100).toFixed(1)}% del total
             </p>
           </CardContent>
@@ -234,12 +257,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Calendario Semanal */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-white">Semana Actual</CardTitle>
+      <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+        <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardTitle className="text-xl font-semibold text-white">Semana Actual</CardTitle>
           <Button 
-            variant="link" 
-            className="text-blue-500 flex items-center gap-1 p-0"
+            variant="ghost" 
+            className="text-blue-400 hover:text-blue-300 flex items-center gap-2 p-2 hover:bg-white/10 rounded-xl transition-all duration-200"
             onClick={() => router.push('/calendar')}
           >
             Ver calendario completo <ChevronRight className="h-4 w-4" />
@@ -250,14 +273,14 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Últimos Trades */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-white">Últimos Trades</CardTitle>
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <CardTitle className="text-xl font-semibold text-white">Últimos Trades</CardTitle>
             <Button 
-              variant="link" 
-              className="text-blue-500 flex items-center gap-1 p-0"
+              variant="ghost" 
+              className="text-blue-400 hover:text-blue-300 flex items-center gap-2 p-2 hover:bg-white/10 rounded-xl transition-all duration-200"
               onClick={() => router.push('/trades')}
             >
               Ver todos <ChevronRight className="h-4 w-4" />
@@ -269,12 +292,12 @@ export default function DashboardPage() {
         </Card>
 
         {/* Cuentas */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-white">Mis Cuentas</CardTitle>
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <CardTitle className="text-xl font-semibold text-white">Mis Cuentas</CardTitle>
             <Button 
-              variant="link" 
-              className="text-blue-500 flex items-center gap-1 p-0"
+              variant="ghost" 
+              className="text-blue-400 hover:text-blue-300 flex items-center gap-2 p-2 hover:bg-white/10 rounded-xl transition-all duration-200"
               onClick={() => router.push('/accounts')}
             >
               Ver todas <ChevronRight className="h-4 w-4" />

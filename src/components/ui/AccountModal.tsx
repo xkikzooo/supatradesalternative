@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showToast } from "@/lib/toast";
 import { Label } from "@/components/ui/label";
+import { Wallet, DollarSign, Building2, User, X, Save, AlertTriangle } from "lucide-react";
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -102,7 +103,7 @@ export function AccountModal({ isOpen, onClose, onSuccess, initialData }: Accoun
         throw new Error(errorData.error || 'Error al guardar la cuenta');
       }
 
-      showToast(initialData ? 'Cuenta actualizada' : 'Cuenta creada', 'success');
+      showToast(initialData ? 'Cuenta actualizada correctamente' : 'Cuenta creada correctamente', 'success');
       
       // Forzar refresco de los datos antes de cerrar el modal
       fetchAccounts();
@@ -119,138 +120,184 @@ export function AccountModal({ isOpen, onClose, onSuccess, initialData }: Accoun
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
+      <DialogContent className="bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl max-w-2xl">
+        <DialogHeader className="flex flex-row items-center gap-3">
+          <Wallet className="h-6 w-6 text-blue-400" />
+          <DialogTitle className="text-xl font-semibold text-white">
             {initialData ? 'Editar Cuenta' : 'Nueva Cuenta'}
           </DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="ml-auto text-white/60 hover:text-white hover:bg-white/10 rounded-xl"
+            disabled={isLoading}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Nombre de la cuenta"
-              required
-              className="bg-gray-800 border-gray-700"
-            />
+          {/* Información básica */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-white flex items-center gap-2">
+              <User className="h-5 w-5 text-blue-400" />
+              Información básica
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-white/80">Nombre de la cuenta</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ej: Cuenta Principal"
+                  required
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="broker" className="text-white/80">Broker</Label>
+                <Input
+                  id="broker"
+                  value={formData.broker}
+                  onChange={(e) => setFormData({ ...formData, broker: e.target.value })}
+                  placeholder="Ej: FTMO, MFF, etc."
+                  required
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Balance y finanzas */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-white flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-emerald-400" />
+              Balance y finanzas
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="balance" className="text-white/80">Balance Actual</Label>
+                <Input
+                  id="balance"
+                  type="number"
+                  step="0.01"
+                  value={formData.balance}
+                  onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+                  placeholder="0.00"
+                  required
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="initialBalance" className="text-white/80">Balance Inicial</Label>
+                <Input
+                  id="initialBalance"
+                  type="number"
+                  step="0.01"
+                  value={formData.initialBalance}
+                  onChange={(e) => setFormData({ ...formData, initialBalance: e.target.value })}
+                  placeholder="0.00"
+                  required
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Configuración */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-white flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-purple-400" />
+              Configuración
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type" className="text-white/80">Tipo de cuenta</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) => setFormData({ ...formData, type: value })}
+                  required
+                >
+                  <SelectTrigger className="bg-white/10 backdrop-blur-sm border border-white/20 text-white focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50">
+                    <SelectValue placeholder="Selecciona un tipo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20">
+                    <SelectItem value="Challenge" className="text-white hover:bg-white/10">Challenge</SelectItem>
+                    <SelectItem value="Fondeada" className="text-white hover:bg-white/10">Fondeada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currency" className="text-white/80">Moneda</Label>
+                <Select
+                  value={formData.currency}
+                  onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                  required
+                >
+                  <SelectTrigger className="bg-white/10 backdrop-blur-sm border border-white/20 text-white focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50">
+                    <SelectValue placeholder="Selecciona moneda" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20">
+                    <SelectItem value="USD" className="text-white hover:bg-white/10">USD</SelectItem>
+                    <SelectItem value="EUR" className="text-white hover:bg-white/10">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="balance">Balance Actual</Label>
+              <Label htmlFor="riskPerTrade" className="text-white/80">Riesgo por Trade (opcional)</Label>
               <Input
-                id="balance"
-                type="number"
-                step="0.01"
-                value={formData.balance}
-                onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-                placeholder="Balance actual"
-                required
-                className="bg-gray-800 border-gray-700"
+                id="riskPerTrade"
+                value={formData.riskPerTrade}
+                onChange={(e) => setFormData({ ...formData, riskPerTrade: e.target.value })}
+                placeholder="Ej: 1% o $100"
+                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="initialBalance">Balance Inicial</Label>
-              <Input
-                id="initialBalance"
-                type="number"
-                step="0.01"
-                value={formData.initialBalance}
-                onChange={(e) => setFormData({ ...formData, initialBalance: e.target.value })}
-                placeholder="Balance inicial"
-                required
-                className="bg-gray-800 border-gray-700"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="broker">Broker</Label>
-            <Input
-              id="broker"
-              value={formData.broker}
-              onChange={(e) => setFormData({ ...formData, broker: e.target.value })}
-              placeholder="Nombre del broker"
-              required
-              className="bg-gray-800 border-gray-700"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Tipo</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-                required
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-700">
-                  <SelectValue placeholder="Selecciona un tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Challenge">Challenge</SelectItem>
-                  <SelectItem value="Fondeada">Fondeada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="currency">Moneda</Label>
-              <Select
-                value={formData.currency}
-                onValueChange={(value) => setFormData({ ...formData, currency: value })}
-                required
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-700">
-                  <SelectValue placeholder="Selecciona moneda" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="riskPerTrade">Riesgo por Trade (opcional)</Label>
-            <Input
-              id="riskPerTrade"
-              value={formData.riskPerTrade}
-              onChange={(e) => setFormData({ ...formData, riskPerTrade: e.target.value })}
-              placeholder="Ej: 1%"
-              className="bg-gray-800 border-gray-700"
-            />
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
-                <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z"></path>
-                <circle cx="12" cy="12" r="1"></circle>
-                <path d="M12 8v3"></path>
-              </svg>
+            <div className="rounded-xl p-4 text-sm bg-red-500/10 text-red-300 border border-red-500/20 backdrop-blur-sm flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 animate-pulse" />
               {error}
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="border-gray-700 hover:bg-gray-800"
+              className="bg-white/10 border-white/20 text-white/80 hover:bg-white/20 hover:text-white rounded-xl transition-all duration-200"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Guardando..." : initialData ? "Actualizar" : "Crear"}
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="bg-blue-500/80 hover:bg-blue-500 text-white rounded-xl transition-all duration-200 flex items-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  {initialData ? "Actualizar" : "Crear"}
+                </>
+              )}
             </Button>
           </div>
         </form>

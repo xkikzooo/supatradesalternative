@@ -4,17 +4,7 @@ import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { AccountModal } from "./ui/AccountModal";
 import { AccountCard } from "./ui/AccountCard";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "./ui/alert-dialog";
+import { ConfirmDeleteModal } from "./ui/confirm-delete-modal";
 import { toast } from "sonner";
 
 interface Account {
@@ -35,7 +25,7 @@ export function AccountsDataTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const fetchAccounts = async () => {
     try {
@@ -92,6 +82,14 @@ export function AccountsDataTable() {
     handleModalClose();
   };
 
+  const handleDeleteConfirm = async () => {
+    if (selectedAccount) {
+      await handleDelete(selectedAccount.id);
+      setIsDeleteModalOpen(false);
+      setSelectedAccount(null);
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-4">Cargando cuentas...</div>;
   }
@@ -105,7 +103,7 @@ export function AccountsDataTable() {
           onEdit={handleEdit}
           onDelete={(id) => {
             setSelectedAccount(accounts.find(a => a.id === id) || null);
-            setIsDeleteDialogOpen(true);
+            setIsDeleteModalOpen(true);
           }}
         />
       ))}
@@ -117,35 +115,19 @@ export function AccountsDataTable() {
         initialData={selectedAccount || undefined}
       />
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={() => setIsDeleteDialogOpen(false)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro de que deseas eliminar esta cuenta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer.
-              {selectedAccount && (
-                <span className="mt-2 block">
-                  <span className="font-semibold">{selectedAccount.name}</span>
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-500 hover:bg-red-600"
-              onClick={() => {
-                if (selectedAccount) {
-                  handleDelete(selectedAccount.id);
-                  setIsDeleteDialogOpen(false);
-                }
-              }}
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedAccount(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Eliminar cuenta"
+        description={`¿Estás seguro de que quieres eliminar la cuenta "${selectedAccount?.name}"? Esta acción no se puede deshacer.`}
+        type="danger"
+        confirmText="Eliminar cuenta"
+        cancelText="Cancelar"
+      />
     </div>
   );
 } 

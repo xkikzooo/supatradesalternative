@@ -1,24 +1,15 @@
 'use client';
 
 import { TradeCard } from "@/components/ui/TradeCard";
+import { TradeGalleryCard } from "@/components/ui/TradeGalleryCard";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Check, X, Download } from "lucide-react";
+import { Plus, Trash2, Check, X, Download, Grid, List } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-// TradeModal eliminado - ahora se usa página completa
 import { showToast } from "@/lib/toast";
 import { TradeFilter } from "@/components/ui/trade-filter";
 import { startOfToday, startOfWeek, startOfMonth, isAfter, endOfMonth } from "date-fns";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteModal } from "@/components/ui/confirm-delete-modal";
 import { AdvancedTradeFilter, TradeFilters } from "@/components/ui/advanced-trade-filter";
 import { exportToExcel, exportToCSV, exportToPDF } from "@/lib/export-utils";
 import {
@@ -28,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLocalStorage } from "@/lib/use-local-storage";
+import { cn } from "@/lib/utils";
 
 interface Trade {
   id: string;
@@ -51,7 +43,6 @@ interface Trade {
 }
 
 export default function TradesPage() {
-  // Modal eliminado - ahora se usa página completa
   const [trades, setTrades] = useState<Trade[]>([]);
   const [filteredTrades, setFilteredTrades] = useState<Trade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,14 +50,30 @@ export default function TradesPage() {
   const [filterValue, setFilterValue] = useState('all');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<TradeFilters>({});
   const [tradingPairs, setTradingPairs] = useState<{id: string, name: string}[]>([]);
   const [tradingAccounts, setTradingAccounts] = useState<{id: string, name: string}[]>([]);
+  const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
   const [savedFilters, setSavedFilters] = useLocalStorage<{name: string, filters: TradeFilters}[]>(
     'saved-trade-filters', 
     []
   );
+  const [savedViewMode, setSavedViewMode] = useLocalStorage<'list' | 'gallery'>(
+    'trade-view-mode',
+    'list'
+  );
+
+  // Inicializar el modo de vista desde localStorage
+  useEffect(() => {
+    setViewMode(savedViewMode);
+  }, [savedViewMode]);
+
+  // Actualizar localStorage cuando cambie el modo de vista
+  const handleViewModeChange = (mode: 'list' | 'gallery') => {
+    setViewMode(mode);
+    setSavedViewMode(mode);
+  };
 
   const fetchTrades = async () => {
     try {
@@ -241,12 +248,6 @@ export default function TradesPage() {
   };
 
   const handleDeleteSelected = async () => {
-    // Cerrar el diálogo primero
-    setIsDeleteDialogOpen(false);
-    
-    // Agregar un pequeño retraso para permitir que se cierre el diálogo
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
     let successCount = 0;
     let errorCount = 0;
     let lastErrorMessage = "Error desconocido";
@@ -308,8 +309,6 @@ export default function TradesPage() {
     setSelectionMode(!selectionMode);
   };
 
-  // Función de éxito del modal eliminada - ahora se maneja en las páginas completas
-
   // Manejar exportación de datos
   const handleExport = (format: 'excel' | 'csv' | 'pdf') => {
     if (filteredTrades.length === 0) {
@@ -352,30 +351,68 @@ export default function TradesPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Trades</h1>
-        <div className="flex space-x-2">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
+        <h1 className="text-3xl font-bold text-white">Trades</h1>
+        <div className="flex space-x-3">
+          {/* Botones de cambio de vista */}
+          <div className="flex items-center border border-white/20 rounded-xl bg-white/5 backdrop-blur-sm">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleViewModeChange('list')}
+              className={cn(
+                "rounded-r-none border-r border-white/20 transition-all duration-200",
+                viewMode === 'list' 
+                  ? "bg-white/20 text-white border-white/30" 
+                  : "bg-transparent text-white/70 hover:text-white hover:bg-white/10"
+              )}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'gallery' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleViewModeChange('gallery')}
+              className={cn(
+                "rounded-l-none transition-all duration-200",
+                viewMode === 'gallery' 
+                  ? "bg-white/20 text-white border-white/30" 
+                  : "bg-transparent text-white/70 hover:text-white hover:bg-white/10"
+              )}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+          </div>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white/80 hover:text-white hover:bg-white/15 hover:border-white/30 rounded-xl transition-all duration-200"
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Exportar
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport('excel')}>
+            <DropdownMenuContent align="end" className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
+              <DropdownMenuItem onClick={() => handleExport('excel')} className="text-white/80 hover:text-white hover:bg-white/10">
                 Exportar a Excel
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('csv')}>
+              <DropdownMenuItem onClick={() => handleExport('csv')} className="text-white/80 hover:text-white hover:bg-white/10">
                 Exportar a CSV
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+              <DropdownMenuItem onClick={() => handleExport('pdf')} className="text-white/80 hover:text-white hover:bg-white/10">
                 Exportar a PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={() => router.push('/trades/new')} size="sm">
+          <Button 
+            onClick={() => router.push('/trades/new')} 
+            size="sm"
+            className="px-4 py-2.5 bg-blue-500/80 text-white hover:bg-blue-500 rounded-xl backdrop-blur-sm transition-all duration-200"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Trade
           </Button>
@@ -384,6 +421,12 @@ export default function TradesPage() {
               onClick={toggleSelectionMode}
               variant={selectionMode ? "default" : "outline"}
               size="sm"
+              className={cn(
+                "px-4 py-2.5 rounded-xl transition-all duration-200",
+                selectionMode 
+                  ? "bg-white/20 text-white border-white/30" 
+                  : "border border-white/20 bg-white/10 backdrop-blur-sm text-white/80 hover:text-white hover:bg-white/15 hover:border-white/30"
+              )}
             >
               {selectionMode ? (
                 <>
@@ -423,20 +466,52 @@ export default function TradesPage() {
         onLoadFilter={handleLoadFilter}
       />
 
-      <span className="text-sm text-gray-400">
-        {filteredTrades.length} {filteredTrades.length === 1 ? 'trade' : 'trades'}
-      </span>
+      <div className="flex items-center justify-between p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
+        <span className="text-sm text-white/70 font-medium">
+          {filteredTrades.length} {filteredTrades.length === 1 ? 'trade' : 'trades'}
+        </span>
+        {selectionMode && selectedTrades.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-blue-300 font-medium">
+              {selectedTrades.length} seleccionado{selectedTrades.length > 1 ? 's' : ''}
+            </span>
+            <Button
+              onClick={() => setIsDeleteModalOpen(true)}
+              size="sm"
+              variant="destructive"
+              className="px-3 py-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg backdrop-blur-sm transition-all duration-200"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Eliminar
+            </Button>
+          </div>
+        )}
+      </div>
       
       {error ? (
-        <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
+        <div className="rounded-2xl bg-red-500/10 backdrop-blur-xl p-6 text-sm text-red-300 border border-red-500/20">
           {error}
         </div>
       ) : isLoading ? (
-        <div className="text-center text-gray-400">Cargando trades...</div>
+        <div className="text-center text-white/60 py-12">Cargando trades...</div>
       ) : filteredTrades.length === 0 ? (
-        <div className="text-center text-gray-400">No hay trades registrados</div>
+        <div className="text-center text-white/60 py-12">No hay trades registrados</div>
+      ) : viewMode === 'gallery' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredTrades.map((trade) => (
+            <TradeGalleryCard
+              key={trade.id}
+              {...trade}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              selectionMode={selectionMode}
+              isSelected={selectedTrades.includes(trade.id)}
+              onSelectChange={handleSelectTrade}
+            />
+          ))}
+        </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-4">
           {filteredTrades.map((trade) => (
             <TradeCard
               key={trade.id}
@@ -451,29 +526,17 @@ export default function TradesPage() {
         </div>
       )}
 
-      {/* Modal eliminado - ahora se usa una página completa */}
-
-      {/* Diálogo de confirmación para eliminación múltiple */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-zinc-900 text-white border border-zinc-800 shadow-xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg text-zinc-100">Eliminar trades seleccionados</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              ¿Estás seguro de que quieres eliminar {selectedTrades.length} {selectedTrades.length === 1 ? 'trade' : 'trades'}?
-              Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteSelected}
-              className="bg-red-600 text-white hover:bg-red-700"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Modal de confirmación para eliminación múltiple */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteSelected}
+        title="Eliminar trades seleccionados"
+        description={`¿Estás seguro de que quieres eliminar ${selectedTrades.length} ${selectedTrades.length === 1 ? 'trade' : 'trades'}? Esta acción no se puede deshacer.`}
+        type="danger"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+      />
     </div>
   );
 } 

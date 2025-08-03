@@ -185,9 +185,7 @@ function ResetPasswordForm() {
       {/* Sección derecha - Imagen */}
       <div className="hidden w-1/2 sm:block">
         <div className="relative h-full w-full">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(13,71,161,0.2)_0%,transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(126,87,194,0.2)_0%,transparent_50%)]" />
+          <div className="absolute inset-0 bg-black" />
           <Image
             src="/login.jpg"
             alt="Trading background"

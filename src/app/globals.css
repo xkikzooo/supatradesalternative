@@ -32,10 +32,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground relative min-h-screen font-sans;
-    background-image: 
-      radial-gradient(circle at top center, rgba(13, 71, 161, 0.15) 0%, transparent 70%),
-      radial-gradient(circle at bottom left, rgba(126, 87, 194, 0.1) 0%, transparent 50%);
+    @apply bg-black text-foreground relative min-h-screen font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading font-semibold tracking-tight;

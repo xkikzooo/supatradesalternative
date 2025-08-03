@@ -13,17 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from './button';
-// TradeModal eliminado - ahora se usa página completa
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDeleteModal } from './confirm-delete-modal';
 import { showToast } from "@/lib/toast";
 import { cn } from '@/lib/utils';
 import { Checkbox } from "@/components/ui/checkbox";
@@ -71,27 +61,15 @@ export function TradeCard({
 }: TradeCardProps) {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
-  // Estado del modal eliminado - ahora se usa página completa
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleDelete = async () => {
     try {
-      // Cerrar el diálogo primero para evitar interacciones durante la eliminación
-      setIsDeleteDialogOpen(false);
-      
-      // Pequeño retraso para permitir que la animación del diálogo termine
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Llamar a la función onDelete proporcionada por el componente padre
-      // No mostramos toast aquí para evitar duplicación
       await onDelete(id);
-      
-      // No mostrar toast aquí, el componente padre ya se encarga de eso
+      setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error al eliminar:", error);
-      
-      // En caso de error sí mostramos el toast aquí
       showToast(
         error instanceof Error ? error.message : "Error al eliminar el trade", 
         "error"
@@ -112,19 +90,19 @@ export function TradeCard({
     switch (result.toUpperCase()) {
       case 'WIN':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/10 text-green-500">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
             WIN
           </span>
         );
       case 'LOSS':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-500">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/20 text-rose-300 border border-rose-500/30 backdrop-blur-sm">
             LOSS
           </span>
         );
       case 'BE':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/10 text-yellow-500">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30 backdrop-blur-sm">
             BE
           </span>
         );
@@ -135,52 +113,55 @@ export function TradeCard({
 
   return (
     <>
-      <div className="rounded-lg border border-gray-800 bg-black/50 p-4 space-y-2">
+      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 space-y-4 transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:shadow-xl">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {selectionMode && (
               <Checkbox 
                 checked={isSelected} 
-                onCheckedChange={(checked: boolean | 'indeterminate') => onSelectChange?.(id, checked === true)}
-                className="mr-2"
+                onCheckedChange={(checked: boolean | 'indeterminate') => {
+                  onSelectChange?.(id, checked === true);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="mr-2 bg-white/10 border-white/20 data-[state=checked]:bg-blue-500/80 data-[state=checked]:border-blue-500/80"
               />
             )}
-            <span className="text-xs text-gray-400">
+            <span className="text-sm text-white/60">
               {format(new Date(date), 'dd/MM/yyyy', { locale: es })}
             </span>
           </div>
           {selectionMode && isSelected && (
-            <span className="text-xs text-blue-400">Seleccionado</span>
+            <span className="text-sm text-blue-300 font-medium">Seleccionado</span>
           )}
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-lg font-medium text-white">{tradingPair.name}</span>
+            <span className="text-xl font-semibold text-white">{tradingPair.name}</span>
             <div className="flex items-center gap-2">
               <span className={cn(
-                "px-1.5 py-0.5 rounded text-xs font-medium",
+                "px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm",
                 direction === "LONG" 
-                  ? "bg-green-500/10 text-green-500 border border-green-500/20" 
-                  : "bg-red-500/10 text-red-500 border border-red-500/20"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" 
+                  : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
               )}>
                 {direction}
               </span>
               {account && (
                 <span className={cn(
-                  "px-1.5 py-0.5 rounded text-xs font-medium",
-                  account.type === "Real" ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
+                  "px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm",
+                  account.type === "Real" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                 )}>
                   {account.type}
                 </span>
               )}
-              {account && <span className="text-xs text-gray-400">{account.broker}</span>}
+              {account && <span className="text-xs text-white/60">{account.broker}</span>}
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end gap-1">
               <span className={cn(
-                "text-lg font-medium",
-                pnl > 0 ? "text-green-400" : "text-red-400"
+                "text-xl font-bold",
+                pnl > 0 ? "text-emerald-300" : "text-rose-300"
               )}>
                 {formatPnL(pnl)}
               </span>
@@ -189,28 +170,40 @@ export function TradeCard({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1 hover:bg-gray-800 rounded-md transition-colors"
+                className="p-2 hover:bg-white/10 rounded-xl transition-all duration-200 backdrop-blur-sm"
               >
                 {isExpanded ? (
-                  <ChevronUp className="h-5 w-5 text-gray-400" />
+                  <ChevronUp className="h-5 w-5 text-white/60" />
                 ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-400" />
+                  <ChevronDown className="h-5 w-5 text-white/60" />
                 )}
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="p-1 hover:bg-gray-800 rounded-md transition-colors">
-                    <MoreVertical className="h-5 w-5 text-gray-400" />
+                  <button 
+                    className="p-2 hover:bg-white/10 rounded-xl transition-all duration-200 backdrop-blur-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreVertical className="h-5 w-5 text-white/60" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[160px]">
-                  <DropdownMenuItem onClick={() => router.push(`/trades/edit/${id}`)}>
+                <DropdownMenuContent align="end" className="w-[160px] bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/trades/edit/${id}`);
+                    }} 
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                  >
                     <Pencil className="mr-2 h-4 w-4" />
                     <span>Editar</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                    className="text-red-400 focus:text-red-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="text-rose-300 focus:text-rose-200 hover:bg-rose-500/20"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Eliminar</span>
@@ -222,23 +215,23 @@ export function TradeCard({
         </div>
 
         {isExpanded && (
-          <div className="space-y-4 pt-4 border-t border-gray-800">
+          <div className="space-y-4 pt-4 border-t border-white/10">
             <div>
-              <p className="text-sm text-gray-400">Bias</p>
+              <p className="text-sm text-white/60 font-medium">Bias</p>
               <p className="text-white">{bias}</p>
             </div>
             {psychology && (
               <div>
-                <p className="text-sm text-gray-400">Psicología</p>
+                <p className="text-sm text-white/60 font-medium">Psicología</p>
                 <p className="text-white">{psychology}</p>
               </div>
             )}
             {images.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-4">
                 {images.map((image, index) => (
                   <div 
                     key={index} 
-                    className="relative aspect-square w-16 rounded-lg overflow-hidden cursor-pointer"
+                    className="relative aspect-square w-32 h-32 rounded-xl overflow-hidden cursor-pointer border border-white/10 hover:border-white/20 transition-all duration-200"
                     onClick={() => setSelectedImage(image)}
                   >
                     <Image
@@ -256,62 +249,46 @@ export function TradeCard({
       </div>
 
       {/* Modal de confirmación de eliminación */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-zinc-900 text-white border border-zinc-800 shadow-xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-zinc-100">
-              <AlertOctagon className="h-6 w-6 text-red-500 animate-pulse" />
-              Confirmar eliminación
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              ¿Estás seguro de que quieres eliminar este trade de {tradingPair.name}?
-              Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 flex items-center gap-1">
-              <X className="h-4 w-4" />
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-600 text-zinc-100 hover:bg-red-700 flex items-center gap-1"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Modal de edición eliminado - ahora se usa una página completa */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Eliminar Trade"
+        description={`¿Estás seguro de que quieres eliminar este trade de ${tradingPair.name}? Esta acción no se puede deshacer.`}
+        type="danger"
+        confirmText="Eliminar Trade"
+        cancelText="Cancelar"
+      />
 
       {/* Modal de imagen ampliada */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm cursor-pointer p-2"
           onClick={() => setSelectedImage(null)}
         >
           <div 
-            className="relative max-w-[90vw] max-h-[90vh]"
+            className="relative w-full h-full max-w-7xl max-h-[95vh] bg-white/5 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <Button
               variant="ghost"
               size="icon"
-              className="absolute -top-12 right-0 text-white hover:text-gray-300"
+              className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 bg-black/40 hover:bg-black/60 rounded-xl backdrop-blur-sm"
               onClick={() => setSelectedImage(null)}
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </Button>
-            <Image
-              src={selectedImage}
-              alt="Imagen ampliada"
-              width={1200}
-              height={800}
-              className="rounded-lg"
-              style={{ objectFit: 'contain', maxHeight: '90vh' }}
-            />
+            
+            <div className="relative w-full h-full flex items-center justify-center">
+              <Image
+                src={selectedImage}
+                alt="Imagen ampliada"
+                width={1600}
+                height={1200}
+                className="w-full h-full object-contain"
+                style={{ maxHeight: '95vh', maxWidth: '95vw' }}
+              />
+            </div>
           </div>
         </div>
       )}

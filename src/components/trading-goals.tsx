@@ -9,6 +9,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { cn } from '@/lib/utils';
 
 // Tipo para los objetivos
 interface TradingGoal {
@@ -179,93 +180,100 @@ export function TradingGoals({ totalProfit, winRate, tradeCount, maxDrawdown }: 
   return (
     <div>
       <Tabs defaultValue="active" value={selectedTab} onValueChange={setSelectedTab}>
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="active">Activos</TabsTrigger>
-            <TabsTrigger value="completed">Completados</TabsTrigger>
-            <TabsTrigger value="all">Todos</TabsTrigger>
+        <div className="flex justify-between items-center mb-6">
+          <TabsList className="bg-white/10 backdrop-blur-sm border border-white/20">
+            <TabsTrigger value="active" className="text-white/80 data-[state=active]:text-white data-[state=active]:bg-white/20">Activos</TabsTrigger>
+            <TabsTrigger value="completed" className="text-white/80 data-[state=active]:text-white data-[state=active]:bg-white/20">Completados</TabsTrigger>
+            <TabsTrigger value="all" className="text-white/80 data-[state=active]:text-white data-[state=active]:bg-white/20">Todos</TabsTrigger>
           </TabsList>
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" onClick={() => {
-                setEditingGoal(null);
-                resetForm();
-              }}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white/80 hover:text-white hover:bg-white/15 hover:border-white/30 rounded-xl transition-all duration-200"
+                onClick={() => {
+                  setEditingGoal(null);
+                  resetForm();
+                }}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo objetivo
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl">
               <DialogHeader>
-                <DialogTitle>{editingGoal ? 'Editar objetivo' : 'Nuevo objetivo'}</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-white font-semibold">{editingGoal ? 'Editar objetivo' : 'Nuevo objetivo'}</DialogTitle>
+                <DialogDescription className="text-white/70">
                   Define un objetivo de trading para hacer seguimiento a tu progreso.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre</Label>
+                  <Label htmlFor="name" className="text-white/70 font-medium">Nombre</Label>
                   <Input
                     id="name"
                     placeholder="Ej: Objetivo mensual de ganancias"
                     value={newGoal.name}
                     onChange={(e) => setNewGoal({ ...newGoal, name: e.target.value })}
+                    className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder:text-white/50 rounded-xl focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="type">Tipo</Label>
+                    <Label htmlFor="type" className="text-white/70 font-medium">Tipo</Label>
                     <Select
                       value={newGoal.type}
                       onValueChange={(value: 'profit' | 'winrate' | 'trades' | 'drawdown') => 
                         setNewGoal({ ...newGoal, type: value })
                       }
                     >
-                      <SelectTrigger id="type">
+                      <SelectTrigger id="type" className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white/80 hover:text-white hover:bg-white/15 hover:border-white/30 rounded-xl transition-all duration-200">
                         <SelectValue placeholder="Tipo de objetivo" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="profit">Ganancias</SelectItem>
-                        <SelectItem value="winrate">Tasa de éxito</SelectItem>
-                        <SelectItem value="trades">Número de trades</SelectItem>
-                        <SelectItem value="drawdown">Drawdown máximo</SelectItem>
+                      <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
+                        <SelectItem value="profit" className="text-white/80 hover:text-white hover:bg-white/10">Ganancias</SelectItem>
+                        <SelectItem value="winrate" className="text-white/80 hover:text-white hover:bg-white/10">Tasa de éxito</SelectItem>
+                        <SelectItem value="trades" className="text-white/80 hover:text-white hover:bg-white/10">Número de trades</SelectItem>
+                        <SelectItem value="drawdown" className="text-white/80 hover:text-white hover:bg-white/10">Drawdown máximo</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="period">Período</Label>
+                    <Label htmlFor="period" className="text-white/70 font-medium">Período</Label>
                     <Select
                       value={newGoal.period}
                       onValueChange={(value: 'daily' | 'weekly' | 'monthly' | 'yearly') => 
                         setNewGoal({ ...newGoal, period: value })
                       }
                     >
-                      <SelectTrigger id="period">
+                      <SelectTrigger id="period" className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white/80 hover:text-white hover:bg-white/15 hover:border-white/30 rounded-xl transition-all duration-200">
                         <SelectValue placeholder="Período" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Diario</SelectItem>
-                        <SelectItem value="weekly">Semanal</SelectItem>
-                        <SelectItem value="monthly">Mensual</SelectItem>
-                        <SelectItem value="yearly">Anual</SelectItem>
+                      <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
+                        <SelectItem value="daily" className="text-white/80 hover:text-white hover:bg-white/10">Diario</SelectItem>
+                        <SelectItem value="weekly" className="text-white/80 hover:text-white hover:bg-white/10">Semanal</SelectItem>
+                        <SelectItem value="monthly" className="text-white/80 hover:text-white hover:bg-white/10">Mensual</SelectItem>
+                        <SelectItem value="yearly" className="text-white/80 hover:text-white hover:bg-white/10">Anual</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="target">Valor objetivo</Label>
+                  <Label htmlFor="target" className="text-white/70 font-medium">Valor objetivo</Label>
                   <Input
                     id="target"
                     type="number"
                     placeholder="Ej: 1000"
                     value={newGoal.target}
                     onChange={(e) => setNewGoal({ ...newGoal, target: parseFloat(e.target.value) })}
+                    className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder:text-white/50 rounded-xl focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
                   />
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-white/50">
                     {newGoal.type === 'profit' && 'Ganancia objetivo en dólares'}
                     {newGoal.type === 'winrate' && 'Tasa de éxito objetivo en porcentaje'}
                     {newGoal.type === 'trades' && 'Número de trades a realizar'}
@@ -275,35 +283,44 @@ export function TradingGoals({ totalProfit, winRate, tradeCount, maxDrawdown }: 
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="startDate">Fecha de inicio</Label>
+                    <Label htmlFor="startDate" className="text-white/70 font-medium">Fecha de inicio</Label>
                     <Input
                       id="startDate"
                       type="date"
                       value={newGoal.startDate}
                       onChange={(e) => setNewGoal({ ...newGoal, startDate: e.target.value })}
+                      className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white rounded-xl focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="endDate">Fecha de fin (opcional)</Label>
+                    <Label htmlFor="endDate" className="text-white/70 font-medium">Fecha de fin (opcional)</Label>
                     <Input
                       id="endDate"
                       type="date"
                       value={newGoal.endDate || ''}
                       onChange={(e) => setNewGoal({ ...newGoal, endDate: e.target.value || undefined })}
+                      className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white rounded-xl focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
                     />
                   </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => {
-                  setIsDialogOpen(false);
-                  setEditingGoal(null);
-                  resetForm();
-                }}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    setEditingGoal(null);
+                    resetForm();
+                  }}
+                  className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white/80 hover:text-white hover:bg-white/15 hover:border-white/30 rounded-xl transition-all duration-200"
+                >
                   Cancelar
                 </Button>
-                <Button onClick={handleSaveGoal}>
+                <Button 
+                  onClick={handleSaveGoal}
+                  className="px-4 py-2.5 bg-blue-500/80 text-white hover:bg-blue-500 rounded-xl backdrop-blur-sm transition-all duration-200"
+                >
                   {editingGoal ? 'Actualizar' : 'Crear'}
                 </Button>
               </DialogFooter>
@@ -312,7 +329,7 @@ export function TradingGoals({ totalProfit, winRate, tradeCount, maxDrawdown }: 
         </div>
         
         <TabsContent value="active" className="m-0">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {filteredGoals.length > 0 ? (
               filteredGoals.map((goal) => (
                 <GoalCard
@@ -326,14 +343,14 @@ export function TradingGoals({ totalProfit, winRate, tradeCount, maxDrawdown }: 
               ))
             ) : (
               <div className="col-span-2 text-center py-8">
-                <p className="text-gray-500">No hay objetivos activos. Crea un nuevo objetivo para empezar a hacer seguimiento.</p>
+                <p className="text-white/60">No hay objetivos activos. Crea un nuevo objetivo para empezar a hacer seguimiento.</p>
               </div>
             )}
           </div>
         </TabsContent>
         
         <TabsContent value="completed" className="m-0">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {filteredGoals.length > 0 ? (
               filteredGoals.map((goal) => (
                 <GoalCard
@@ -347,14 +364,14 @@ export function TradingGoals({ totalProfit, winRate, tradeCount, maxDrawdown }: 
               ))
             ) : (
               <div className="col-span-2 text-center py-8">
-                <p className="text-gray-500">No hay objetivos completados aún.</p>
+                <p className="text-white/60">No hay objetivos completados aún.</p>
               </div>
             )}
           </div>
         </TabsContent>
         
         <TabsContent value="all" className="m-0">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {filteredGoals.length > 0 ? (
               filteredGoals.map((goal) => (
                 <GoalCard
@@ -368,7 +385,7 @@ export function TradingGoals({ totalProfit, winRate, tradeCount, maxDrawdown }: 
               ))
             ) : (
               <div className="col-span-2 text-center py-8">
-                <p className="text-gray-500">No hay objetivos. Crea un nuevo objetivo para empezar a hacer seguimiento.</p>
+                <p className="text-white/60">No hay objetivos. Crea un nuevo objetivo para empezar a hacer seguimiento.</p>
               </div>
             )}
           </div>
@@ -393,55 +410,68 @@ function GoalCard({ goal, progress, formatValue, onEdit, onDelete }: GoalCardPro
     : goal.current >= goal.target;
   
   const progressColor = isCompleted 
-    ? 'bg-green-500' 
+    ? 'bg-emerald-500' 
     : progress >= 75 
       ? 'bg-amber-500' 
       : 'bg-blue-500';
   
   return (
-    <Card className={isCompleted ? 'border-green-500/50' : ''}>
-      <CardHeader className="pb-2">
+    <Card className={cn(
+      "bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition-all duration-300",
+      isCompleted && "border-emerald-500/50"
+    )}>
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base">{goal.name}</CardTitle>
+          <CardTitle className="text-base text-white">{goal.name}</CardTitle>
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" onClick={onEdit}>
-              <Edit2 className="h-4 w-4" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onEdit}
+              className="p-2 hover:bg-white/10 rounded-xl transition-all duration-200"
+            >
+              <Edit2 className="h-4 w-4 text-white/60" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={onDelete}>
-              <Trash2 className="h-4 w-4" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onDelete}
+              className="p-2 hover:bg-white/10 rounded-xl transition-all duration-200"
+            >
+              <Trash2 className="h-4 w-4 text-white/60" />
             </Button>
           </div>
         </div>
-        <CardDescription>
+        <CardDescription className="text-white/60">
           {goal.period.charAt(0).toUpperCase() + goal.period.slice(1)} • 
           {goal.startDate && ` Desde ${new Date(goal.startDate).toLocaleDateString()}`}
           {goal.endDate && ` hasta ${new Date(goal.endDate).toLocaleDateString()}`}
         </CardDescription>
       </CardHeader>
-      <CardContent className="pb-2">
-        <div className="mb-2">
-          <Progress value={progress} className={`h-2 ${progressColor}`} />
+      <CardContent className="pb-3">
+        <div className="mb-3">
+          <Progress value={progress} className={`h-3 ${progressColor} rounded-full`} />
         </div>
         <div className="flex justify-between text-sm">
           <div>
-            <span className="text-gray-500">Actual: </span>
-            <span>{formatValue(goal.current, goal.type)}</span>
+            <span className="text-white/60">Actual: </span>
+            <span className="text-white font-medium">{formatValue(goal.current, goal.type)}</span>
           </div>
           <div>
-            <span className="text-gray-500">Objetivo: </span>
-            <span>{formatValue(goal.target, goal.type)}</span>
+            <span className="text-white/60">Objetivo: </span>
+            <span className="text-white font-medium">{formatValue(goal.target, goal.type)}</span>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2">
+      <CardFooter className="pt-3">
         <div className="w-full flex justify-between items-center">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-white/60">
             {isCompleted 
               ? '¡Objetivo completado!' 
               : `Progreso: ${Math.round(progress)}%`}
           </span>
           {isCompleted && (
-            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-100">
+            <span className="inline-flex items-center rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-medium text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
               Completado
             </span>
           )}

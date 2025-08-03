@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoveryMessage, setRecoveryMessage] = useState('');
   const [recoveryStatus, setRecoveryStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -74,82 +76,8 @@ export default function LoginPage() {
 
   if (showRecovery) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950 px-4 py-8">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4 py-8">
         <div className="w-full max-w-md">
-            <div className="flex flex-col items-center mb-8">
-              <Image
-                src="/supatrades.svg"
-                alt="Supatrades Logo"
-                width={200}
-                height={60}
-                className="mb-6"
-                priority
-              />
-            <div className="bg-gray-800/40 backdrop-blur-sm w-full rounded-xl shadow-2xl p-8 border border-gray-800">
-              <h2 className="text-2xl font-bold tracking-tight text-white text-center mb-6">
-                Recupera tu contraseña
-              </h2>
-              <p className="mb-6 text-sm text-gray-400 text-center">
-                Ingresa tu correo electrónico para recibir un enlace de recuperación
-              </p>
-
-              <form className="space-y-5" onSubmit={handleRecoverySubmit}>
-              {recoveryMessage && (
-                <div className={`rounded-lg p-4 text-sm ${
-                  recoveryStatus === 'error' ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'
-                }`}>
-                  {recoveryMessage}
-                </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="recovery-email"
-                    className="block text-sm font-medium text-gray-300 mb-1"
-                >
-                  Correo electrónico
-                </label>
-                <input
-                  id="recovery-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                    className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                  placeholder="tu@email.com"
-                  value={recoveryEmail}
-                  onChange={(e) => setRecoveryEmail(e.target.value)}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={recoveryStatus === 'loading'}
-                  className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
-              >
-                {recoveryStatus === 'loading' ? 'Enviando...' : 'Enviar enlace de recuperación'}
-              </button>
-
-                <div className="text-center mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowRecovery(false)}
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  Volver al inicio de sesión
-                </button>
-              </div>
-            </form>
-          </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950 px-4 py-8">
-      <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-8">
             <Image
               src="/supatrades.svg"
@@ -159,81 +87,160 @@ export default function LoginPage() {
               className="mb-6"
               priority
             />
-          <div className="bg-gray-800/40 backdrop-blur-sm w-full rounded-xl shadow-2xl p-8 border border-gray-800">
-            <h2 className="text-2xl font-bold tracking-tight text-white text-center mb-4">
-              Inicia sesión en tu cuenta
+          </div>
+          <div className="bg-white/5 backdrop-blur-xl w-full rounded-2xl shadow-2xl p-8 border border-white/10">
+            <h2 className="text-2xl font-bold tracking-tight text-white text-center mb-6">
+              Recupera tu contraseña
             </h2>
-            <p className="mb-6 text-sm text-gray-400 text-center">
+            <p className="mb-6 text-sm text-white/70 text-center">
+              Ingresa tu correo electrónico para recibir un enlace de recuperación
+            </p>
+
+            <form className="space-y-5" onSubmit={handleRecoverySubmit}>
+              {recoveryMessage && (
+                <div className={`rounded-xl p-4 text-sm backdrop-blur-sm ${
+                  recoveryStatus === 'error' ? 'bg-red-500/10 text-red-300 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                }`}>
+                  {recoveryMessage}
+                </div>
+              )}
+
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/50" />
+                <input
+                  id="recovery-email"
+                  name="email"
+                  type="email"
+                  required
+                  value={recoveryEmail}
+                  onChange={(e) => setRecoveryEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
+                  placeholder="tu@email.com"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={recoveryStatus === 'loading'}
+                className="w-full bg-blue-500/80 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {recoveryStatus === 'loading' ? 'Enviando...' : 'Enviar enlace de recuperación'}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowRecovery(false)}
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20"
+              >
+                Volver al login
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex">
+      {/* Sección izquierda - Formulario */}
+      <div className="flex-1 flex flex-col items-center justify-center bg-black px-4 py-8">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center mb-8">
+            <Image
+              src="/supatrades.svg"
+              alt="Supatrades Logo"
+              width={200}
+              height={60}
+              className="mb-6"
+              priority
+            />
+          </div>
+          <div className="bg-white/5 backdrop-blur-xl w-full rounded-2xl shadow-2xl p-8 border border-white/10">
+            <h2 className="text-2xl font-bold tracking-tight text-white text-center mb-4">
+              Inicia sesión
+            </h2>
+            <p className="mb-6 text-sm text-white/70 text-center">
               O{' '}
               <Link
                 href="/register"
                 className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
-                regístrate si aún no tienes una
+                crea una cuenta si no tienes una
               </Link>
             </p>
 
-            <form className="space-y-5" onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-400">
+              <div className="mb-6 rounded-xl p-4 text-sm bg-red-500/10 text-red-300 border border-red-500/20 backdrop-blur-sm">
                 {error}
               </div>
             )}
 
-            <div>
-              <label
-                htmlFor="email"
-                  className="block text-sm font-medium text-gray-300 mb-1"
-              >
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="tu@email.com"
-              />
-            </div>
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/50" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="w-full pl-10 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
+                  placeholder="tu@email.com"
+                />
+              </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                  className="block text-sm font-medium text-gray-300 mb-1"
-              >
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                  className="block w-full rounded-lg border border-gray-700 bg-gray-800/60 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="••••••••"
-              />
-              <div className="mt-1 text-right">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/50" />
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="w-full pl-10 pr-12 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
+                  placeholder="••••••••"
+                />
                 <button
                   type="button"
-                  onClick={() => setShowRecovery(true)}
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
                 >
-                  ¿Olvidaste tu contraseña?
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-                className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors mt-6"
-            >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-blue-500/80 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowRecovery(true)}
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </form>
+          </div>
         </div>
+      </div>
+
+      {/* Sección derecha - Imagen */}
+      <div className="hidden w-1/2 sm:block">
+        <div className="relative h-full w-full">
+          <div className="absolute inset-0 bg-black" />
+          <Image
+            src="/login.jpg"
+            alt="Trading background"
+            fill
+            className="object-cover opacity-20"
+            priority
+          />
         </div>
       </div>
     </div>
