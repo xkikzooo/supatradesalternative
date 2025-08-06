@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, X, Edit, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Edit, TrendingUp, TrendingDown, Dumbbell } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,21 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+  const [isGymActive, setIsGymActive] = useState(false);
+  const [gymActiveDays, setGymActiveDays] = useState<Set<string>>(new Set());
+
+  // Cargar estado del gimnasio desde localStorage al inicializar
+  useEffect(() => {
+    const savedGymDays = localStorage.getItem('gymActiveDays');
+    if (savedGymDays) {
+      try {
+        const gymDaysArray = JSON.parse(savedGymDays);
+        setGymActiveDays(new Set(gymDaysArray));
+      } catch (error) {
+        console.error('Error al cargar estado del gimnasio:', error);
+      }
+    }
+  }, []);
 
   const calculatePnLs = useCallback(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -216,6 +231,32 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
+  const toggleGymForDay = (day: Date) => {
+    const dayKey = format(day, 'yyyy-MM-dd');
+    setGymActiveDays(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dayKey)) {
+        newSet.delete(dayKey);
+      } else {
+        newSet.add(dayKey);
+      }
+      
+      // Guardar en localStorage
+      try {
+        localStorage.setItem('gymActiveDays', JSON.stringify(Array.from(newSet)));
+      } catch (error) {
+        console.error('Error al guardar estado del gimnasio:', error);
+      }
+      
+      return newSet;
+    });
+  };
+
+  const isGymActiveForDay = (day: Date) => {
+    const dayKey = format(day, 'yyyy-MM-dd');
+    return gymActiveDays.has(dayKey);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
@@ -327,6 +368,11 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                             isToday ? "text-white" : "text-white/60"
                           )}>{format(day, 'd')}</span>
                         </div>
+                        {isGymActiveForDay(day) && (
+                          <div className="absolute top-2 right-2">
+                            <Dumbbell className="h-4 w-4 text-green-400" />
+                          </div>
+                        )}
                         <div className="h-full flex flex-col items-center justify-center">
                           {dayPnL !== 0 ? (
                             <div className={cn(
@@ -348,12 +394,29 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                         )}
                       </button>
                     </PopoverTrigger>
-                    {tradesCount > 0 && (
-                      <PopoverContent 
-                        className="w-[350px] p-4 z-50 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl"
-                        align="center"
-                        sideOffset={5}
-                      >
+                    <PopoverContent 
+                      className="w-[350px] p-4 z-50 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl"
+                      align="center"
+                      sideOffset={5}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-white/80">
+                          {tradesCount > 0 ? `Trades del ${format(day, 'dd/MM/yyyy', { locale: es })}` : format(day, 'dd/MM/yyyy', { locale: es })}
+                        </h3>
+                        <button
+                          onClick={() => toggleGymForDay(day)}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-all duration-200",
+                            isGymActiveForDay(day) 
+                              ? "bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30" 
+                              : "bg-white/10 text-white/60 border border-white/20 hover:bg-white/15 hover:text-white/80"
+                          )}
+                          title={isGymActiveForDay(day) ? "Desactivar modo gimnasio" : "Activar modo gimnasio"}
+                        >
+                          <Dumbbell className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {tradesCount > 0 ? (
                         <div className="space-y-2">
                           {dayTrades.map(trade => (
                             <button
@@ -390,8 +453,12 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                             </button>
                           ))}
                         </div>
-                      </PopoverContent>
-                    )}
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-white/60 text-sm">No hay trades registrados para este día</p>
+                        </div>
+                      )}
+                    </PopoverContent>
                   </Popover>
                 );
               })}
