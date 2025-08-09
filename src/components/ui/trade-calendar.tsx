@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, X, Edit, TrendingUp, TrendingDown, Dumbbell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Edit, TrendingUp, TrendingDown, Dumbbell, Share } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from './button';
 import { useRouter } from 'next/navigation';
+import { showToast } from "@/lib/toast";
 
 interface Trade {
   id: string;
@@ -62,18 +63,76 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
   const [isGymActive, setIsGymActive] = useState(false);
   const [gymActiveDays, setGymActiveDays] = useState<Set<string>>(new Set());
 
-  // Cargar estado del gimnasio desde localStorage al inicializar
+  // Cargar estado del gimnasio desde la base de datos al inicializar
   useEffect(() => {
-    const savedGymDays = localStorage.getItem('gymActiveDays');
-    if (savedGymDays) {
+    const loadGymDays = async () => {
       try {
-        const gymDaysArray = JSON.parse(savedGymDays);
-        setGymActiveDays(new Set(gymDaysArray));
+        const response = await fetch('/api/gym-days');
+        if (response.ok) {
+          const gymDays = await response.json();
+          const gymDaysSet = new Set<string>();
+          gymDays.forEach((day: any) => {
+            gymDaysSet.add(day.date as string);
+          });
+          setGymActiveDays(gymDaysSet);
+        } else {
+          console.error('Error al cargar días de gimnasio');
+        }
       } catch (error) {
-        console.error('Error al cargar estado del gimnasio:', error);
+        console.error('Error al cargar días de gimnasio:', error);
+        
+        // Si hay error con la API, cargar desde localStorage y migrar a la base de datos
+        const savedGymDays = localStorage.getItem('gymActiveDays');
+        if (savedGymDays) {
+          try {
+            const gymDaysArray = JSON.parse(savedGymDays);
+            const gymDaysSet = new Set<string>(gymDaysArray);
+            setGymActiveDays(gymDaysSet);
+            
+            // Migrar datos a la base de datos
+            if (gymDaysArray.length > 0) {
+              migrateLocalStorageToDatabase(gymDaysArray);
+            }
+          } catch (error) {
+            console.error('Error al cargar estado del gimnasio desde localStorage:', error);
+          }
+        }
       }
-    }
+    };
+
+    loadGymDays();
   }, []);
+
+  // Función para migrar datos de localStorage a la base de datos
+  const migrateLocalStorageToDatabase = async (gymDaysArray: string[]) => {
+    try {
+      console.log('Migrando días de gimnasio a la base de datos...');
+      
+      for (const date of gymDaysArray) {
+        try {
+          const response = await fetch('/api/gym-days', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ date }),
+          });
+          
+          if (!response.ok) {
+            console.warn(`Error al migrar fecha ${date}`);
+          }
+        } catch (error) {
+          console.warn(`Error al migrar fecha ${date}:`, error);
+        }
+      }
+      
+      console.log('Migración completada. Limpiando localStorage...');
+      localStorage.removeItem('gymActiveDays');
+      
+    } catch (error) {
+      console.error('Error durante la migración:', error);
+    }
+  };
 
   const calculatePnLs = useCallback(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -91,13 +150,13 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
       };
     });
 
-    // Calcular PnL mensual
+    // Calcular PnL mensual (siempre en dinero)
     const monthlyTotal = tradesWithPercentage
       .filter(trade => {
         const tradeDate = new Date(trade.date);
         return isSameMonth(tradeDate, currentMonth);
       })
-      .reduce((sum, trade) => sum + trade.pnl, 0);
+      .reduce((sum, trade) => sum + trade.pnl, 0); // Siempre usar pnl en dinero
 
     setMonthlyPnL(monthlyTotal);
 
@@ -174,6 +233,16 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
     }
   };
 
+  // Función para formatear el PnL mensual siempre como dinero
+  const formatMonthlyPnL = (pnl: number) => {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(pnl);
+  };
+
   const formatBalance = (balance: number) => {
     if (balance >= 1000000) {
       return `${(balance / 1000000).toFixed(0)}M`;
@@ -231,30 +300,92 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  const toggleGymForDay = (day: Date) => {
+  const toggleGymForDay = async (day: Date) => {
     const dayKey = format(day, 'yyyy-MM-dd');
-    setGymActiveDays(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(dayKey)) {
-        newSet.delete(dayKey);
-      } else {
-        newSet.add(dayKey);
+    
+    try {
+      // Hacer llamada a la API para toggle
+      const response = await fetch('/api/gym-days', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ date: dayKey }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const result = await response.json();
       
-      // Guardar en localStorage
-      try {
-        localStorage.setItem('gymActiveDays', JSON.stringify(Array.from(newSet)));
-      } catch (error) {
-        console.error('Error al guardar estado del gimnasio:', error);
-      }
-      
-      return newSet;
-    });
+      // Actualizar el estado local basado en la respuesta
+      setGymActiveDays(prev => {
+        const newSet = new Set(prev);
+        if (result.action === 'added') {
+          newSet.add(dayKey);
+        } else if (result.action === 'removed') {
+          newSet.delete(dayKey);
+        }
+        return newSet;
+      });
+
+    } catch (error) {
+      console.error('Error al toggle día de gimnasio:', error);
+      // Fallback: toggle local si falla la API
+      setGymActiveDays(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(dayKey)) {
+          newSet.delete(dayKey);
+        } else {
+          newSet.add(dayKey);
+        }
+        
+        // Intentar guardar en localStorage como fallback
+        try {
+          localStorage.setItem('gymActiveDays', JSON.stringify(Array.from(newSet)));
+        } catch (error) {
+          console.error('Error al guardar en localStorage:', error);
+        }
+        
+        return newSet;
+      });
+    }
   };
 
   const isGymActiveForDay = (day: Date) => {
     const dayKey = format(day, 'yyyy-MM-dd');
     return gymActiveDays.has(dayKey);
+  };
+
+  const handleShare = async () => {
+    if (!selectedTrade) return;
+    
+    try {
+      const response = await fetch(`/api/trades/${selectedTrade.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al generar link de compartir');
+      }
+
+      const { shareUrl } = await response.json();
+      
+      // Copiar al portapapeles
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copiado al portapapeles', 'success');
+    } catch (error) {
+      console.error('Error al compartir trade:', error);
+      showToast(
+        error instanceof Error ? error.message : 'Error al compartir el trade',
+        'error'
+      );
+    }
   };
 
   return (
@@ -312,7 +443,7 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
           monthlyPnL < 0 ? "text-rose-300" : 
           trades.filter(trade => isSameMonth(new Date(trade.date), currentMonth)).length > 0 ? "text-amber-300" : "text-white/60"
         )}>
-          {monthlyPnL !== 0 ? formatPnL(monthlyPnL) : 
+          {monthlyPnL !== 0 ? formatMonthlyPnL(monthlyPnL) : 
            trades.filter(trade => isSameMonth(new Date(trade.date), currentMonth)).length > 0 ? "Breakeven" : "$0"}
         </span>
       </div>
@@ -588,14 +719,21 @@ export function TradeCalendar({ trades }: TradeCalendarProps) {
                 )}
               </div>
 
-              {/* Botón de editar */}
-              <div className="flex justify-end pt-4 border-t border-white/10">
+              {/* Botones de acción */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <Button
+                  onClick={handleShare}
+                  className="bg-blue-500/80 hover:bg-blue-500 text-white flex items-center gap-2"
+                >
+                  <Share className="h-4 w-4" />
+                  Compartir
+                </Button>
                 <Button
                   onClick={() => {
                     setIsTradeModalOpen(false);
                     router.push(`/trades/edit/${selectedTrade.id}`);
                   }}
-                  className="bg-blue-500/80 hover:bg-blue-500 text-white flex items-center gap-2"
+                  className="bg-green-500/80 hover:bg-green-500 text-white flex items-center gap-2"
                 >
                   <Edit className="h-4 w-4" />
                   Editar Trade

@@ -53,15 +53,46 @@ export async function POST(req: Request) {
       );
     }
 
+    // Verificar el límite de 10 pares de trading
+    const existingPairsCount = await prisma.tradingPair.count();
+    
+    if (existingPairsCount >= 10) {
+      return NextResponse.json(
+        { error: 'Solo se pueden tener un máximo de 10 pares de trading' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar si ya existe un par con el mismo nombre
+    const existingPair = await prisma.tradingPair.findUnique({
+      where: { name: name.toUpperCase() }
+    });
+
+    if (existingPair) {
+      return NextResponse.json(
+        { error: 'Ya existe un par de trading con ese nombre' },
+        { status: 400 }
+      );
+    }
+
     const tradingPair = await prisma.tradingPair.create({
       data: {
-        name,
+        name: name.toUpperCase(),
       },
     });
 
     return NextResponse.json(tradingPair, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al crear par de trading:', error);
+    
+    // Manejar error de duplicado
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Ya existe un par de trading con ese nombre' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Error al crear el par de trading' },
       { status: 500 }

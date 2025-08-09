@@ -11,10 +11,7 @@ import {
   LogOut,
   Wallet,
   MoreVertical,
-  Plus,
-  User,
-  Shield,
-  Bell
+  Plus
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuContent, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -122,36 +119,6 @@ export function Sidebar() {
                 >
                   <Settings className="h-4 w-4" />
                   <span>Configuración</span>
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <Link 
-                  href="/profile" 
-                  className="flex items-center gap-3 cursor-pointer hover:bg-white/10 text-white/80 hover:text-white transition-all duration-200"
-                >
-                  <User className="h-4 w-4" />
-                  <span>Perfil</span>
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <Link 
-                  href="/notifications" 
-                  className="flex items-center gap-3 cursor-pointer hover:bg-white/10 text-white/80 hover:text-white transition-all duration-200"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span>Notificaciones</span>
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <Link 
-                  href="/security" 
-                  className="flex items-center gap-3 cursor-pointer hover:bg-white/10 text-white/80 hover:text-white transition-all duration-200"
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Seguridad</span>
                 </Link>
               </DropdownMenuItem>
               

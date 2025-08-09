@@ -236,6 +236,9 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
       const pnlValue = Math.abs(parseFloat(formData.pnl.replace(/,/g, '')) || 0);
       const finalPnl = formData.result === 'LOSS' ? -pnlValue : pnlValue;
 
+      // Crear fecha en hora local para evitar problemas de zona horaria
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+
       const dataToSubmit = {
         tradingPairId: formData.tradingPairId,
         direction: formData.direction,
@@ -246,7 +249,7 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
         pnl: finalPnl,
         riskAmount: formData.riskAmount,
         images: formData.images,
-        date: date.toISOString(),
+        date: localDate.toISOString(),
         accountIds: formData.accountIds
       };
 
@@ -282,6 +285,12 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
   const handleAddNewPair = async () => {
     if (!newPair.trim()) return;
     
+    // Verificar límite de 10 pares
+    if (tradingPairs.length >= 10) {
+      showToast('Solo puedes tener un máximo de 10 pares de trading', 'error');
+      return;
+    }
+    
     try {
       const response = await fetch("/api/trading-pairs", {
         method: "POST",
@@ -292,7 +301,8 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Error al crear el par de trading");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al crear el par de trading");
       }
 
       const newPairData = await response.json();
@@ -303,7 +313,31 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
       showToast("Par de trading creado correctamente", "success");
     } catch (error) {
       console.error("Error:", error);
-      showToast("Error al crear el par de trading", "error");
+      showToast(error instanceof Error ? error.message : "Error al crear el par de trading", "error");
+    }
+  };
+
+  const handleDeletePair = async (pairId: string) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar este par de trading?")) return;
+
+    try {
+      const response = await fetch(`/api/trading-pairs/${pairId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al eliminar el par de trading");
+      }
+
+      setTradingPairs(prev => prev.filter(pair => pair.id !== pairId));
+      if (formData.tradingPairId === pairId) {
+        setFormData(prev => ({ ...prev, tradingPairId: '' }));
+      }
+      showToast("Par de trading eliminado correctamente", "success");
+    } catch (error) {
+      console.error("Error:", error);
+      showToast(error instanceof Error ? error.message : "Error al eliminar el par de trading", "error");
     }
   };
 
@@ -411,13 +445,26 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
                       </SelectTrigger>
                       <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
                         {tradingPairs.map((pair: any) => (
-                          <SelectItem 
-                            key={pair.id} 
-                            value={pair.id}
-                            className="text-white/80 hover:text-white hover:bg-white/10"
-                          >
-                            {pair.name}
-                          </SelectItem>
+                          <div key={pair.id} className="flex items-center group px-2 py-1.5 mx-1 rounded-lg">
+                            <SelectItem 
+                              value={pair.id}
+                              className="text-white/80 hover:text-white hover:bg-transparent flex-1 border-0 px-0 py-0 focus:bg-transparent data-[highlighted]:bg-transparent"
+                            >
+                              {pair.name}
+                            </SelectItem>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeletePair(pair.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-red-500/20 rounded-md text-red-400 hover:text-red-300 ml-2"
+                              title="Eliminar par"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
                         ))}
                       </SelectContent>
                     </Select>
@@ -680,17 +727,6 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
                   placeholder="0.00"
                   className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder:text-white/50 rounded-xl focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
                 />
-              </div>
-
-              {/* Ratio R:R (calculado automáticamente) */}
-              <div className="space-y-2">
-                <Label className="text-white/80 font-medium">Ratio R:R</Label>
-                <div className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white rounded-xl">
-                  {formData.riskAmount > 0 && parseFloat(formData.pnl.replace(/,/g, '')) !== 0 ? 
-                    (parseFloat(formData.pnl.replace(/,/g, '')) / formData.riskAmount).toFixed(2) : 
-                    '0.00'
-                  }
-                </div>
               </div>
             </div>
           </div>

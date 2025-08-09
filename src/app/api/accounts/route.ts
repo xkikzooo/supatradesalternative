@@ -98,6 +98,15 @@ export async function POST(req: Request) {
 
     console.log('ID del usuario:', session.user.id);
 
+    // Verificar que el usuario exista (evita errores de relación al crear la cuenta)
+    const userExists = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!userExists) {
+      return NextResponse.json(
+        { error: 'Usuario no encontrado. Vuelve a iniciar sesión o regístrate.' },
+        { status: 404 }
+      );
+    }
+
     const account = await prisma.tradingAccount.create({
       data: {
         name: data.name,
@@ -107,11 +116,8 @@ export async function POST(req: Request) {
         type: data.type,
         currency: data.currency,
         riskPerTrade: data.riskPerTrade || null,
-        user: {
-          connect: {
-            id: session.user.id
-          }
-        }
+        // Enlazar mediante clave foránea directa para compatibilidad (y claridad)
+        userId: session.user.id,
       },
     });
 
@@ -122,6 +128,13 @@ export async function POST(req: Request) {
     if (error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Ya existe una cuenta con ese nombre' },
+        { status: 400 }
+      );
+    }
+
+    if (error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'No se pudo crear la cuenta porque el usuario asociado no existe' },
         { status: 400 }
       );
     }

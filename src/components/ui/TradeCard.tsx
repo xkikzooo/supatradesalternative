@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, TrendingUp, TrendingDown, X, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, TrendingUp, TrendingDown, X, AlertTriangle, AlertOctagon, Share } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
@@ -73,6 +73,34 @@ export function TradeCard({
       showToast(
         error instanceof Error ? error.message : "Error al eliminar el trade", 
         "error"
+      );
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const response = await fetch(`/api/trades/${id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al generar link de compartir');
+      }
+
+      const { shareUrl } = await response.json();
+      
+      // Copiar al portapapeles
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copiado al portapapeles', 'success');
+    } catch (error) {
+      console.error('Error al compartir trade:', error);
+      showToast(
+        error instanceof Error ? error.message : 'Error al compartir el trade',
+        'error'
       );
     }
   };
@@ -207,6 +235,16 @@ export function TradeCard({
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Eliminar</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShare();
+                    }}
+                    className="text-blue-300 focus:text-blue-200 hover:bg-blue-500/20"
+                  >
+                    <Share className="mr-2 h-4 w-4" />
+                    <span>Compartir</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

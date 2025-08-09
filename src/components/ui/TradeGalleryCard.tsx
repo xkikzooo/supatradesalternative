@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreVertical, Pencil, Trash2, TrendingUp, TrendingDown, X, AlertTriangle, AlertOctagon, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, TrendingUp, TrendingDown, X, AlertTriangle, AlertOctagon, Edit, ChevronLeft, ChevronRight, Share } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
@@ -118,6 +118,34 @@ export function TradeGalleryCard({
       showToast(
         error instanceof Error ? error.message : "Error al eliminar el trade", 
         "error"
+      );
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const response = await fetch(`/api/trades/${id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al generar link de compartir');
+      }
+
+      const { shareUrl } = await response.json();
+      
+      // Copiar al portapapeles
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copiado al portapapeles', 'success');
+    } catch (error) {
+      console.error('Error al compartir trade:', error);
+      showToast(
+        error instanceof Error ? error.message : 'Error al compartir el trade',
+        'error'
       );
     }
   };
@@ -333,6 +361,16 @@ export function TradeGalleryCard({
                   <Trash2 className="mr-2 h-4 w-4" />
                   <span>Eliminar</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare();
+                  }}
+                  className="text-blue-300 hover:text-blue-200 hover:bg-blue-500/20"
+                >
+                  <Share className="mr-2 h-4 w-4" />
+                  <span>Compartir</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -439,14 +477,24 @@ export function TradeGalleryCard({
               )}
             </div>
 
-            {/* Botón de editar */}
-            <div className="flex justify-end pt-4 border-t border-white/10">
+            {/* Botones de acción */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <Button
+                onClick={() => {
+                  setIsSummaryModalOpen(false);
+                  handleShare();
+                }}
+                className="bg-blue-500/80 hover:bg-blue-500 text-white flex items-center gap-2"
+              >
+                <Share className="h-4 w-4" />
+                Compartir
+              </Button>
               <Button
                 onClick={() => {
                   setIsSummaryModalOpen(false);
                   router.push(`/trades/edit/${id}`);
                 }}
-                className="bg-blue-500/80 hover:bg-blue-500 text-white flex items-center gap-2"
+                className="bg-green-500/80 hover:bg-green-500 text-white flex items-center gap-2"
               >
                 <Edit className="h-4 w-4" />
                 Editar Trade

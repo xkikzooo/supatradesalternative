@@ -32,6 +32,12 @@ export default function RegisterPage() {
       return;
     }
 
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -45,9 +51,10 @@ export default function RegisterPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Error al registrar');
+        throw new Error(data.error || 'Error al registrar');
       }
 
       router.push(`/confirm-account?email=${encodeURIComponent(email)}`);

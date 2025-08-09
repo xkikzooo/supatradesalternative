@@ -234,6 +234,9 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       const pnlValue = Math.abs(parseFloat(formData.pnl.replace(/,/g, '')) || 0);
       const finalPnl = formData.result === 'LOSS' ? -pnlValue : pnlValue;
 
+      // Crear fecha en hora local para evitar problemas de zona horaria
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+
       const dataToSubmit = {
         tradingPairId: formData.tradingPairId,
         direction: formData.direction,
@@ -244,7 +247,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
         pnl: finalPnl,
         riskAmount: formData.riskAmount,
         images: formData.images,
-        date: date.toISOString(),
+        date: localDate.toISOString(),
         accountId: formData.accountId
       };
 
@@ -291,6 +294,12 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
   const handleAddNewPair = async () => {
     if (!newPair.trim()) return;
     
+    // Verificar límite de 10 pares
+    if (tradingPairs.length >= 10) {
+      showToast('Solo puedes tener un máximo de 10 pares de trading', 'error');
+      return;
+    }
+    
     try {
       const response = await fetch("/api/trading-pairs", {
         method: "POST",
@@ -301,7 +310,8 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       });
 
       if (!response.ok) {
-        throw new Error("Error al crear el par de trading");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al crear el par de trading");
       }
 
       const newPairData = await response.json();
@@ -312,7 +322,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       showToast("Par de trading creado correctamente", "success");
     } catch (error) {
       console.error("Error:", error);
-      showToast("Error al crear el par de trading", "error");
+      showToast(error instanceof Error ? error.message : "Error al crear el par de trading", "error");
     }
   };
 
@@ -325,7 +335,8 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       });
 
       if (!response.ok) {
-        throw new Error("Error al eliminar el par de trading");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al eliminar el par de trading");
       }
 
       setTradingPairs(prev => prev.filter(pair => pair.id !== pairId));
@@ -335,7 +346,7 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
       showToast("Par de trading eliminado correctamente", "success");
     } catch (error) {
       console.error("Error:", error);
-      showToast("Error al eliminar el par de trading", "error");
+      showToast(error instanceof Error ? error.message : "Error al eliminar el par de trading", "error");
     }
   };
 
@@ -409,12 +420,26 @@ export function TradeModal({ isOpen, onClose, onSuccess, initialData }: TradeMod
                       </SelectTrigger>
                       <SelectContent>
                         {tradingPairs.map((pair: any) => (
-                          <SelectItem 
-                            key={pair.id} 
-                            value={pair.id}
-                          >
-                            <span>{pair.name}</span>
-                          </SelectItem>
+                          <div key={pair.id} className="flex items-center group px-2 py-1.5 mx-1 rounded-lg">
+                            <SelectItem 
+                              value={pair.id}
+                              className="text-white/80 hover:text-white hover:bg-transparent flex-1 border-0 px-0 py-0 focus:bg-transparent data-[highlighted]:bg-transparent"
+                            >
+                              {pair.name}
+                            </SelectItem>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeletePair(pair.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-red-500/20 rounded-md text-red-400 hover:text-red-300 ml-2"
+                              title="Eliminar par"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
                         ))}
                       </SelectContent>
                     </Select>

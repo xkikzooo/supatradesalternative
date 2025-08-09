@@ -103,9 +103,15 @@ export const calculateProfitFactor = (trades: Trade[]): number => {
     .reduce((sum, trade) => sum + trade.pnl, 0));
   
   // Evitar división por cero
-  if (grossLoss === 0) return grossProfit > 0 ? 10 : 0; // Valor arbitrario alto si no hay pérdidas
+  if (grossLoss === 0) {
+    // Si no hay pérdidas pero hay ganancias, retornar un valor alto pero razonable
+    return grossProfit > 0 ? 99.99 : 0;
+  }
   
-  return grossProfit / grossLoss;
+  const profitFactor = grossProfit / grossLoss;
+  
+  // Limitar el valor máximo para evitar números excesivamente altos
+  return Math.min(profitFactor, 99.99);
 };
 
 // Calcular expectativa matemática
