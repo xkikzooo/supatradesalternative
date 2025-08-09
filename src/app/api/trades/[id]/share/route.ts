@@ -56,7 +56,12 @@ export async function POST(
     });
 
     // Crear la URL compartible
-    const shareUrl = `${process.env.NEXTAUTH_URL}/shared/trade/${shareToken}`;
+    const baseUrl = process.env.PUBLIC_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://www.supatrades.app' 
+        : process.env.NEXTAUTH_URL || 'http://localhost:3000');
+    
+    const shareUrl = `${baseUrl}/shared/trade/${shareToken}`;
 
     return NextResponse.json({
       shareToken,
