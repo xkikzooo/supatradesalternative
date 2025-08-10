@@ -5,6 +5,16 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { Trash2, Pencil, MoreVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useDeleteTrade } from "@/hooks/useDashboard";
+import { showToast } from "@/lib/toast";
 
 interface Trade {
   id: string;
@@ -23,6 +33,31 @@ interface RecentTradesTableProps {
 
 export function RecentTradesTable({ trades }: RecentTradesTableProps) {
   const router = useRouter();
+  const deleteTradeMutation = useDeleteTrade();
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm('¿Estás seguro de que quieres eliminar este trade? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      await deleteTradeMutation.mutateAsync(id);
+      showToast("Trade eliminado correctamente", "success");
+    } catch (error) {
+      console.error("Error al eliminar trade:", error);
+      showToast(
+        error instanceof Error ? error.message : "Error al eliminar el trade", 
+        "error"
+      );
+    }
+  };
+
+  const handleEdit = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/trades/edit/${id}`);
+  };
 
   const getResultTag = (result: string) => {
     switch (result) {
@@ -66,6 +101,7 @@ export function RecentTradesTable({ trades }: RecentTradesTableProps) {
             <th className="h-12 px-4 text-left font-medium text-white/70">Dirección</th>
             <th className="h-12 px-4 text-right font-medium text-white/70">PnL</th>
             <th className="h-12 px-4 text-center font-medium text-white/70">Resultado</th>
+            <th className="h-12 px-4 text-center font-medium text-white/70">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/10">
@@ -100,6 +136,36 @@ export function RecentTradesTable({ trades }: RecentTradesTableProps) {
               </td>
               <td className="p-4 text-center align-middle">
                 {getResultTag(trade.result)}
+              </td>
+              <td className="p-4 text-center align-middle">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 hover:bg-white/10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreVertical className="h-4 w-4 text-white/60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[160px] bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
+                    <DropdownMenuItem 
+                      onClick={(e) => handleEdit(trade.id, e)}
+                      className="text-white/80 hover:text-white hover:bg-white/10"
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      <span>Editar</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => handleDelete(trade.id, e)}
+                      className="text-rose-300 focus:text-rose-200 hover:bg-rose-500/20"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Eliminar</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </td>
             </tr>
           ))}

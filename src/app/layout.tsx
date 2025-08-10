@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/providers/session-provider";
+import { QueryProvider } from "@/providers/query-provider";
 import { ToasterProvider } from "@/components/providers/toaster-provider";
 
 const inter = Inter({
@@ -40,10 +41,12 @@ export default function RootLayout({
           enableSystem={false}
           forcedTheme="dark"
         >
-          <AuthProvider>
-            <ToasterProvider />
-            {children}
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <ToasterProvider />
+              {children}
+            </AuthProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

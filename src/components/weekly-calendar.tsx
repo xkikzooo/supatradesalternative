@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -15,9 +14,11 @@ interface Trade {
   };
 }
 
-export function WeeklyCalendar() {
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [loading, setLoading] = useState(true);
+interface WeeklyCalendarProps {
+  trades: Trade[];
+}
+
+export function WeeklyCalendar({ trades }: WeeklyCalendarProps) {
   const today = new Date();
   const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // Lunes
   const endOfCurrentWeek = endOfWeek(today, { weekStartsOn: 1 }); // Domingo
@@ -27,26 +28,6 @@ export function WeeklyCalendar() {
     start: startOfCurrentWeek,
     end: endOfCurrentWeek,
   });
-
-  useEffect(() => {
-    const fetchTrades = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/trades");
-        if (!response.ok) {
-          throw new Error("Error al cargar los trades");
-        }
-        const data = await response.json();
-        setTrades(data || []);
-      } catch (error) {
-        console.error("Error al obtener trades:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrades();
-  }, []);
 
   // Filtrar trades por día de la semana
   const getTradesForDay = (day: Date) => {
@@ -75,14 +56,6 @@ export function WeeklyCalendar() {
       maximumFractionDigits: 0,
     }).format(pnl);
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-white/60">Cargando calendario...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="grid grid-cols-7 gap-3">

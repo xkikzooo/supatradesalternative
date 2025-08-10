@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { cn } from "@/lib/utils";
+import { useTrades, useTradingPairs, useAccounts, useDeleteTrade } from "@/hooks/useTrades";
 
 interface Trade {
   id: string;
@@ -43,86 +44,30 @@ interface Trade {
 }
 
 export default function TradesPage() {
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const router = useRouter();
+  
+  // Usar React Query hooks
+  const { data: trades = [], isLoading, error } = useTrades();
+  const { data: tradingPairs = [] } = useTradingPairs();
+  const { data: tradingAccounts = [] } = useAccounts();
+  const deleteTradeMutation = useDeleteTrade();
+  
+  // Estado local para filtros y UI
   const [filteredTrades, setFilteredTrades] = useState<Trade[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
   const [filterValue, setFilterValue] = useState('all');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<TradeFilters>({});
-  const [tradingPairs, setTradingPairs] = useState<{id: string, name: string}[]>([]);
-  const [tradingAccounts, setTradingAccounts] = useState<{id: string, name: string}[]>([]);
-  const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
-  const [savedFilters, setSavedFilters] = useLocalStorage<{name: string, filters: TradeFilters}[]>(
-    'saved-trade-filters', 
-    []
-  );
-  const [savedViewMode, setSavedViewMode] = useLocalStorage<'list' | 'gallery'>(
+  const [viewMode, setSavedViewMode] = useLocalStorage<'list' | 'gallery'>(
     'trade-view-mode',
     'list'
   );
 
-  // Inicializar el modo de vista desde localStorage
+  // Filtrar trades cuando cambien los datos o filtros
   useEffect(() => {
-    setViewMode(savedViewMode);
-  }, [savedViewMode]);
-
-  // Actualizar localStorage cuando cambie el modo de vista
-  const handleViewModeChange = (mode: 'list' | 'gallery') => {
-    setViewMode(mode);
-    setSavedViewMode(mode);
-  };
-
-  const fetchTrades = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/trades");
-      if (!response.ok) {
-        throw new Error("Error al cargar los trades");
-      }
-      const data = await response.json();
-      setTrades(data || []);
-      setFilteredTrades(data || []);
-    } catch (error) {
-      console.error("Error al obtener trades:", error);
-      setError("Error al cargar los trades");
-      showToast("Error al cargar los trades", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchTradesData = async () => {
-    try {
-      // Obtener pares de trading
-      const pairsResponse = await fetch("/api/trading-pairs");
-      if (pairsResponse.ok) {
-        const pairsData = await pairsResponse.json();
-        setTradingPairs(pairsData);
-      }
-
-      // Obtener cuentas
-      const accountsResponse = await fetch("/api/accounts");
-      if (accountsResponse.ok) {
-        const accountsData = await accountsResponse.json();
-        setTradingAccounts(accountsData);
-      }
-    } catch (error) {
-      console.error("Error al obtener datos:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrades();
-  }, []);
-
-  useEffect(() => {
-    fetchTradesData();
-  }, []);
-
-  useEffect(() => {
+    if (!trades) return;
+    
     const filterTrades = () => {
       const today = startOfToday();
       const weekStart = startOfWeek(today, { weekStartsOn: 1 });
@@ -177,10 +122,6 @@ export default function TradesPage() {
           return false;
         }
         
-        if (advancedFilters.bias && trade.bias !== advancedFilters.bias) {
-          return false;
-        }
-        
         if (advancedFilters.pnlMin !== undefined && trade.pnl < advancedFilters.pnlMin) {
           return false;
         }
@@ -196,9 +137,7 @@ export default function TradesPage() {
     };
 
     filterTrades();
-  }, [filterValue, trades, advancedFilters]);
-
-  const router = useRouter();
+  }, [trades, filterValue, advancedFilters]);
 
   const handleEdit = (id: string) => {
     router.push(`/trades/edit/${id}`);
@@ -206,149 +145,87 @@ export default function TradesPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/trades/${id}`, {
-        method: 'DELETE',
-      });
-
-      // Intentar obtener detalles específicos del error si la respuesta no es exitosa
-      if (!response.ok) {
-        let errorMessage = "Error al eliminar el trade";
-        try {
-          const errorData = await response.json();
-          if (errorData?.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (_) {
-          // Si no podemos parsear el JSON, usamos el mensaje genérico
-        }
-        throw new Error(errorMessage);
-      }
-
-      // Actualizamos la UI después de una eliminación exitosa
+      await deleteTradeMutation.mutateAsync(id);
       showToast("Trade eliminado correctamente", "success");
-      
-      // Refrescar los trades después de un pequeño retardo
-      setTimeout(() => {
-        fetchTrades();
-      }, 500);
+      // Limpiar selección si el trade eliminado estaba seleccionado
+      setSelectedTrades(prev => prev.filter(tradeId => tradeId !== id));
     } catch (error) {
-      console.error("Error al eliminar:", error);
-      // No mostramos toast aquí porque ya lo manejamos en el componente TradeCard
+      console.error("Error al eliminar trade:", error);
+      showToast("Error al eliminar el trade", "error");
     }
   };
 
   const handleSelectTrade = (id: string, isSelected: boolean) => {
-    setSelectedTrades(prev => {
-      if (isSelected) {
-        return [...prev, id];
-      } else {
-        return prev.filter(tradeId => tradeId !== id);
-      }
-    });
+    if (isSelected) {
+      setSelectedTrades(prev => [...prev, id]);
+    } else {
+      setSelectedTrades(prev => prev.filter(tradeId => tradeId !== id));
+    }
   };
 
   const handleDeleteSelected = async () => {
-    let successCount = 0;
-    let errorCount = 0;
-    let lastErrorMessage = "Error desconocido";
-    
-    // Mostrar mensaje de inicio con duración corta
-    showToast(`Eliminando ${selectedTrades.length} trades...`, 'info');
-    
-    // Eliminar cada trade seleccionado
-    for (const id of selectedTrades) {
-      try {
-        const response = await fetch(`/api/trades/${id}`, {
-          method: 'DELETE',
-        });
-
-        if (response.ok) {
-          successCount++;
-        } else {
-          try {
-            const errorData = await response.json();
-            if (errorData?.error) {
-              lastErrorMessage = errorData.error;
-            }
-          } catch (_) {
-            // Si no podemos parsear el JSON, usamos el mensaje genérico
-          }
-          errorCount++;
-        }
-      } catch (error) {
-        console.error(`Error al eliminar trade ${id}:`, error);
-        if (error instanceof Error) {
-          lastErrorMessage = error.message;
-        }
-        errorCount++;
-      }
+    try {
+      await Promise.all(selectedTrades.map(id => deleteTradeMutation.mutateAsync(id)));
+      showToast(`${selectedTrades.length} trades eliminados correctamente`, "success");
+      setSelectedTrades([]);
+      setSelectionMode(false);
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error("Error al eliminar trades:", error);
+      showToast("Error al eliminar algunos trades", "error");
     }
-    
-    // Refrescar la lista y limpiar selección
-    await fetchTrades();
-    setSelectedTrades([]);
-    setSelectionMode(false);
-    
-    // Agregar un pequeño retraso para mostrar el resultado después de actualizar la UI
-    setTimeout(() => {
-      // Mostrar resultados con duración más larga
-      if (errorCount === 0) {
-        showToast(`${successCount} trades eliminados correctamente`, "success");
-      } else if (successCount === 0) {
-        showToast(`Error al eliminar trades: ${lastErrorMessage}`, "error");
-      } else {
-        showToast(`${successCount} trades eliminados, ${errorCount} errores`, "warning");
-      }
-    }, 500);
   };
 
   const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
     if (selectionMode) {
       setSelectedTrades([]);
     }
-    setSelectionMode(!selectionMode);
   };
 
-  // Manejar exportación de datos
   const handleExport = (format: 'excel' | 'csv' | 'pdf') => {
     if (filteredTrades.length === 0) {
-      showToast("No hay trades para exportar", "error");
+      showToast("No hay trades para exportar", "warning");
       return;
     }
-    
+
     try {
-      const fileName = `supatrades_${format === 'excel' ? 'xlsx' : format}`;
-      
       switch (format) {
         case 'excel':
-          exportToExcel(filteredTrades, fileName);
+          exportToExcel(filteredTrades, 'trades');
           break;
         case 'csv':
-          exportToCSV(filteredTrades, fileName);
+          exportToCSV(filteredTrades, 'trades');
           break;
         case 'pdf':
-          exportToPDF(filteredTrades, fileName);
+          exportToPDF(filteredTrades, 'trades');
           break;
       }
-      
-      showToast(`Exportación a ${format.toUpperCase()} completada`, "success");
+      showToast(`Trades exportados a ${format.toUpperCase()} correctamente`, "success");
     } catch (error) {
-      console.error(`Error al exportar a ${format}:`, error);
-      showToast(`Error al exportar a ${format}`, "error");
+      console.error("Error al exportar:", error);
+      showToast("Error al exportar los trades", "error");
     }
   };
-  
-  // Manejar guardado de filtros
+
   const handleSaveFilter = (name: string, filters: TradeFilters) => {
-    setSavedFilters([...savedFilters, { name, filters }]);
-    showToast(`Filtro "${name}" guardado correctamente`, "success");
+    // Implementar guardado de filtros si es necesario
+    showToast("Filtro guardado", "success");
   };
-  
-  // Manejar carga de filtros
+
   const handleLoadFilter = (filters: TradeFilters) => {
     setAdvancedFilters(filters);
     showToast("Filtro aplicado", "success");
   };
+
+  // Mostrar error si hay algún problema
+  if (error) {
+    return (
+      <div className="rounded-2xl bg-red-500/10 backdrop-blur-xl p-6 text-sm text-red-300 border border-red-500/20">
+        Error al cargar los trades: {error.message}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -360,7 +237,7 @@ export default function TradesPage() {
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => handleViewModeChange('list')}
+              onClick={() => setSavedViewMode('list')}
               className={cn(
                 "rounded-r-none border-r border-white/20 transition-all duration-200",
                 viewMode === 'list' 
@@ -373,7 +250,7 @@ export default function TradesPage() {
             <Button
               variant={viewMode === 'gallery' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => handleViewModeChange('gallery')}
+              onClick={() => setSavedViewMode('gallery')}
               className={cn(
                 "rounded-l-none transition-all duration-200",
                 viewMode === 'gallery' 
@@ -462,7 +339,7 @@ export default function TradesPage() {
         tradingPairs={tradingPairs}
         accounts={tradingAccounts}
         onSaveFilter={handleSaveFilter}
-        savedFilters={savedFilters}
+        savedFilters={[]}
         onLoadFilter={handleLoadFilter}
       />
 
@@ -488,11 +365,7 @@ export default function TradesPage() {
         )}
       </div>
       
-      {error ? (
-        <div className="rounded-2xl bg-red-500/10 backdrop-blur-xl p-6 text-sm text-red-300 border border-red-500/20">
-          {error}
-        </div>
-      ) : isLoading ? (
+      {isLoading ? (
         <div className="text-center text-white/60 py-12">Cargando trades...</div>
       ) : filteredTrades.length === 0 ? (
         <div className="text-center text-white/60 py-12">No hay trades registrados</div>

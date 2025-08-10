@@ -1,150 +1,58 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import { formatCurrency } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus, Percent, ChevronRight, DollarSign, Target, BarChart3 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
 import { WeeklyCalendar } from "@/components/weekly-calendar";
 import { AccountPreview } from "@/components/account-preview";
 import { RecentTradesTable } from "@/components/recent-trades-table";
-import { calculateMaxDrawdown, calculateSharpeRatio, calculateSortinoRatio, calculateProfitFactor, calculateExpectancy } from "@/lib/financial-metrics";
-import { TradingGoals } from "@/components/trading-goals";
 import { cn } from "@/lib/utils";
-
-interface Trade {
-  id: string;
-  pnl: number;
-  result: 'WIN' | 'LOSS' | 'BREAKEVEN';
-  date: string;
-}
-
-interface DashboardStats {
-  totalPnL: number;
-  pnlThisMonth: number;
-  pnlLastMonth: number;
-  winrate: number;
-  totalTrades: number;
-  winningTrades: number;
-  losingTrades: number;
-  breakEvenTrades: number;
-}
+import { useDashboard } from "@/hooks/useDashboard";
+import { DashboardSkeleton } from "@/components/ui/skeletons";
+import { formatCurrency } from "@/lib/utils";
+import { TrendingUp, TrendingDown, Minus, Percent, ChevronRight, DollarSign, Target, BarChart3 } from "lucide-react";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalPnL: 0,
-    pnlThisMonth: 0,
-    pnlLastMonth: 0,
-    winrate: 0,
-    totalTrades: 0,
-    winningTrades: 0,
-    losingTrades: 0,
-    breakEvenTrades: 0,
-  });
-  const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
-  const [advancedStats, setAdvancedStats] = useState({
-    sharpeRatio: 0,
-    sortinoRatio: 0,
-    maxDrawdown: 0,
-    profitFactor: 0,
-    expectancy: 0
-  });
+  const { data: dashboardData, isLoading, error } = useDashboard();
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
+  // Redirigir si no está autenticado
+  if (status === 'unauthenticated') {
+    router.push('/login');
+    return null;
+  }
 
-  useEffect(() => {
-    const fetchAndCalculateStats = async () => {
-      try {
-        const response = await fetch('/api/trades');
-        if (!response.ok) {
-          throw new Error('Error al cargar los trades');
-        }
-        const trades: Trade[] = await response.json();
-        
-        // Guardar los trades recientes
-        setRecentTrades(trades.slice(0, 4));
-        
-        // Obtener fechas para filtrar trades por mes
-        const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+  // Mostrar skeleton loader mientras carga
+  if (status === 'loading' || isLoading) {
+    return <DashboardSkeleton />;
+  }
 
-        // Filtrar trades por mes
-        const tradesThisMonth = trades.filter(trade => 
-          new Date(trade.date) >= firstDayOfMonth
-        );
-        const tradesLastMonth = trades.filter(trade => {
-          const tradeDate = new Date(trade.date);
-          return tradeDate >= firstDayOfLastMonth && tradeDate <= lastDayOfLastMonth;
-        });
+  // Mostrar error si hay algún problema
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-400 text-lg">Error al cargar el dashboard: {error.message}</div>
+      </div>
+    );
+  }
 
-        // Calcular PnL por mes
-        const pnlThisMonth = tradesThisMonth.reduce((sum, trade) => sum + trade.pnl, 0);
-        const pnlLastMonth = tradesLastMonth.reduce((sum, trade) => sum + trade.pnl, 0);
+  // Si no hay datos, mostrar mensaje
+  if (!dashboardData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-white/60 text-lg">No hay datos disponibles</div>
+      </div>
+    );
+  }
 
-        // Calcular totales por resultado
-        const winningTrades = trades.filter(trade => trade.result === 'WIN').length;
-        const losingTrades = trades.filter(trade => trade.result === 'LOSS').length;
-        const breakEvenTrades = trades.filter(trade => trade.result === 'BREAKEVEN').length;
-        const totalTrades = trades.length;
-
-        // Calcular winrate (excluyendo breakeven)
-        const tradesExcludingBreakeven = winningTrades + losingTrades;
-        const winrate = tradesExcludingBreakeven > 0 
-          ? (winningTrades / tradesExcludingBreakeven) * 100 
-          : 0;
-
-        // Calcular métricas financieras avanzadas
-        setAdvancedStats({
-          sharpeRatio: calculateSharpeRatio(trades),
-          sortinoRatio: calculateSortinoRatio(trades),
-          maxDrawdown: calculateMaxDrawdown(trades),
-          profitFactor: calculateProfitFactor(trades),
-          expectancy: calculateExpectancy(trades)
-        });
-
-        setStats({
-          totalPnL: trades.reduce((sum, trade) => {
-            // Si el trade es una pérdida, el PnL ya viene negativo
-            return sum + trade.pnl;
-          }, 0),
-          pnlThisMonth,
-          pnlLastMonth,
-          winrate,
-          totalTrades,
-          winningTrades,
-          losingTrades,
-          breakEvenTrades,
-        });
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    };
-
-    fetchAndCalculateStats();
-  }, []);
+  const { stats, advancedStats, recentTrades } = dashboardData;
 
   const calculatePercentageChange = (current: number, previous: number) => {
     if (previous === 0) return 0;
     return ((current - previous) / Math.abs(previous)) * 100;
   };
-
-  if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-white/60 text-lg">Cargando dashboard...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -269,7 +177,7 @@ export default function DashboardPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          <WeeklyCalendar />
+          <WeeklyCalendar trades={dashboardData.trades} />
         </CardContent>
       </Card>
 

@@ -11,6 +11,7 @@ import { TagSelector } from '@/components/ui/tag-selector';
 import { showToast } from '@/lib/toast';
 import { X, Plus, ArrowLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useCreateTrade, useUpdateTrade, useTradingPairs, useAccounts, useCreateTradingPair, useDeleteTradingPair } from "@/hooks/useTrades";
 
 interface TradingPair {
   id: string;
@@ -53,22 +54,15 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
   const router = useRouter();
   const isEditMode = mode === 'edit';
   
-  // Función para forzar la actualización de datos
-  const fetchTrades = async () => {
-    try {
-      const response = await fetch("/api/trades");
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Trades actualizados:", data.length);
-      }
-    } catch (error) {
-      console.error("Error al actualizar trades:", error);
-    }
-  };
+  // Usar React Query hooks
+  const createTradeMutation = useCreateTrade();
+  const updateTradeMutation = useUpdateTrade();
+  const { data: tradingPairs = [] } = useTradingPairs();
+  const { data: accounts = [] } = useAccounts();
+  const createTradingPairMutation = useCreateTradingPair();
+  const deleteTradingPairMutation = useDeleteTradingPair();
   
   const dataFetchedRef = useRef<boolean>(false);
-  const [tradingPairs, setTradingPairs] = useState<TradingPair[]>([]);
-  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -97,116 +91,41 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
       
       setIsLoading(true);
       try {
-        await Promise.all([fetchTradingPairs(), fetchAccounts()]);
-        
-        // Si es modo edición, cargar el trade específico
-        if (isEditMode && tradeId) {
-          await fetchTrade();
-        }
-        
+        // Los datos se cargan automáticamente con React Query
         dataFetchedRef.current = true;
+      } catch (error) {
+        console.error("Error al cargar datos:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadInitialData();
-  }, [isEditMode, tradeId]);
+  }, []);
 
-  // Sincronizar dateString y date
+  // Cargar trade existente si estamos en modo edición
   useEffect(() => {
-    if (dateString) {
-      setDate(new Date(dateString));
-    }
-  }, [dateString]);
-
-  const fetchTrade = async () => {
-    if (!tradeId) return;
-    
-    try {
-      const response = await fetch(`/api/trades/${tradeId}`);
-      
-      if (!response.ok) {
-        let errorMessage = "Error al cargar el trade";
-        try {
-          const errorData = await response.json();
-          if (errorData && errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch {
-          // Si no se puede parsear el error, usar el mensaje por defecto
-        }
-        throw new Error(errorMessage);
-      }
-
-      const tradeData: Trade = await response.json();
-      setTrade(tradeData);
-      
-      // Actualizar el formulario con los datos del trade
-      const pnlValue = Math.abs(tradeData.pnl);
+    if (isEditMode && initialTrade) {
       setFormData({
-        tradingPairId: tradeData.tradingPair.id,
-        direction: tradeData.direction,
-        bias: tradeData.bias,
-        biasExplanation: tradeData.biasExplanation || '',
-        psychology: tradeData.psychology || '',
-        result: tradeData.result,
-        pnl: pnlValue.toLocaleString('en-US', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        }),
-        riskAmount: tradeData.riskAmount || 0,
-        images: tradeData.images || [],
-        date: tradeData.date ? new Date(tradeData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        accountIds: tradeData.accountId ? [tradeData.accountId] : [],
+        tradingPairId: initialTrade.tradingPair.id,
+        direction: initialTrade.direction,
+        bias: initialTrade.bias,
+        biasExplanation: initialTrade.biasExplanation || '',
+        psychology: initialTrade.psychology || '',
+        result: initialTrade.result,
+        pnl: Math.abs(initialTrade.pnl).toString(),
+        riskAmount: initialTrade.riskAmount || 0,
+        images: initialTrade.images || [],
+        date: initialTrade.date ? new Date(initialTrade.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        accountIds: initialTrade.accountId ? [initialTrade.accountId] : [],
       });
       
-      setDateString(tradeData.date ? new Date(tradeData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
-    } catch (error) {
-      console.error("Error al cargar el trade:", error);
-      showToast(error instanceof Error ? error.message : "Error al cargar el trade", "error");
-      router.push('/trades');
-    }
-  };
-
-  const [trade, setTrade] = useState<Trade | null>(initialTrade || null);
-
-  const fetchTradingPairs = async () => {
-    try {
-      const response = await fetch("/api/trading-pairs");
-      if (!response.ok) {
-        throw new Error("Error al cargar los pares de trading");
+      if (initialTrade.date) {
+        setDate(new Date(initialTrade.date));
+        setDateString(new Date(initialTrade.date).toISOString().split('T')[0]);
       }
-      const data = await response.json();
-      setTradingPairs(data || []);
-    } catch (error) {
-      console.error("Error al obtener pares:", error);
-      showToast("Error al cargar los pares de trading", "error");
-      setTradingPairs([]);
     }
-  };
-
-  const fetchAccounts = async () => {
-    try {
-      const res = await fetch('/api/accounts');
-      if (!res.ok) {
-        throw new Error('Error al cargar las cuentas');
-      }
-      const data = await res.json();
-      setAccounts(data || []);
-      
-      // Si no hay cuenta seleccionada y hay cuentas disponibles, seleccionar la primera
-      if (data?.length > 0 && formData.accountIds.length === 0) {
-        setFormData(prev => {
-          return { ...prev, accountIds: [data[0].id] };
-        });
-      }
-    } catch (error) {
-      console.error('Error al cargar las cuentas:', error);
-      showToast('Error al cargar las cuentas', 'error');
-      setAccounts([]);
-    }
-  };
+  }, [isEditMode, initialTrade]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,7 +164,7 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
         bias: formData.bias,
         biasExplanation: formData.biasExplanation,
         psychology: formData.psychology,
-        result: formData.result,
+        result: formData.result as 'WIN' | 'LOSS' | 'BREAKEVEN',
         pnl: finalPnl,
         riskAmount: formData.riskAmount,
         images: formData.images,
@@ -253,26 +172,14 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
         accountIds: formData.accountIds
       };
 
-      const url = isEditMode ? `/api/trades/${tradeId}` : '/api/trades';
-      const method = isEditMode ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSubmit),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Error al ${isEditMode ? 'actualizar' : 'guardar'} el trade`);
+      if (isEditMode && tradeId) {
+        await updateTradeMutation.mutateAsync({ id: tradeId, ...dataToSubmit });
+        showToast('Trade actualizado correctamente', 'success');
+      } else {
+        await createTradeMutation.mutateAsync(dataToSubmit);
+        showToast('Trade creado correctamente', 'success');
       }
-
-      showToast(`Trade ${isEditMode ? 'actualizado' : 'creado'} correctamente`, 'success');
       
-      // Forzar refresco de los datos antes de volver
-      fetchTrades();
       router.push('/trades');
     } catch (error) {
       console.error('Error:', error);
@@ -292,21 +199,7 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
     }
     
     try {
-      const response = await fetch("/api/trading-pairs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: newPair.toUpperCase() }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al crear el par de trading");
-      }
-
-      const newPairData = await response.json();
-      setTradingPairs(prev => [...prev, newPairData]);
+      const newPairData = await createTradingPairMutation.mutateAsync(newPair);
       setFormData(prev => ({ ...prev, tradingPairId: newPairData.id }));
       setNewPair("");
       setShowNewPairInput(false);
@@ -318,22 +211,8 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
   };
 
   const handleDeletePair = async (pairId: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este par de trading?")) return;
-
     try {
-      const response = await fetch(`/api/trading-pairs/${pairId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al eliminar el par de trading");
-      }
-
-      setTradingPairs(prev => prev.filter(pair => pair.id !== pairId));
-      if (formData.tradingPairId === pairId) {
-        setFormData(prev => ({ ...prev, tradingPairId: '' }));
-      }
+      await deleteTradingPairMutation.mutateAsync(pairId);
       showToast("Par de trading eliminado correctamente", "success");
     } catch (error) {
       console.error("Error:", error);

@@ -1,17 +1,11 @@
 'use client';
 
 import { cn } from "@/lib/utils";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { format, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Label } from "./label";
+import { ChevronDown } from "lucide-react";
 
 interface TradeFilterProps {
   value: string;
@@ -28,10 +22,15 @@ export function TradeFilter({
   tradingPairs = [],
   accounts = []
 }: TradeFilterProps) {
-  const [availableMonths, setAvailableMonths] = useState<{value: string, label: string}[]>([]);
-  
-  useEffect(() => {
-    // Generar últimos 12 meses
+  // Estados para manejar los valores de cada select individualmente
+  const [selectedResult, setSelectedResult] = useState<string>('');
+  const [selectedDirection, setSelectedDirection] = useState<string>('');
+  const [selectedPair, setSelectedPair] = useState<string>('');
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [selectedBias, setSelectedBias] = useState<string>('');
+
+  // Memoizar los meses disponibles para evitar re-cálculos innecesarios
+  const availableMonths = useMemo(() => {
     const months = [];
     const today = new Date();
     
@@ -46,147 +45,184 @@ export function TradeFilter({
       });
     }
     
-    setAvailableMonths(months);
+    return months;
   }, []);
+
+  // Componente Select personalizado que imita el diseño de Radix UI
+  function CustomSelect({ 
+    value, 
+    onValueChange, 
+    placeholder, 
+    options,
+    className,
+    active = false 
+  }: {
+    value: string;
+    onValueChange: (value: string) => void;
+    placeholder: string;
+    options: Array<{ value: string; label: string; className?: string }>;
+    className?: string;
+    active?: boolean;
+  }) {
+    return (
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          className={cn(
+            "w-full appearance-none cursor-pointer",
+            "px-4 py-2.5 text-sm font-medium rounded-xl",
+            "border border-white/20 bg-white/10 backdrop-blur-sm",
+            "focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50",
+            "hover:bg-white/15 hover:border-white/30 transition-all duration-200",
+            active 
+              ? "bg-white/15 text-white border-white/30" 
+              : "text-white/80 hover:text-white",
+            className
+          )}
+        >
+          <option value="" disabled className="bg-gray-900 text-white/60">
+            {placeholder}
+          </option>
+          {options.map((option) => (
+            <option 
+              key={option.value} 
+              value={option.value} 
+              className={`bg-gray-900 ${option.className || 'text-white'}`}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50 pointer-events-none" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap gap-4 items-end p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
       <div>
-        <Label htmlFor="date-filter" className="text-sm text-white/70 mb-2 block font-medium">Fecha</Label>
-        <Select
-          value={value.startsWith('month_') ? value : 'month'}
-          onValueChange={(selectedValue) => {
-            onChange(selectedValue);
-          }}
-        >
-          <SelectTrigger 
-            id="date-filter"
-            className={cn(
-              "px-4 py-2.5 h-auto text-sm font-medium rounded-xl transition-all duration-200 min-w-[160px]",
-              "border border-white/20 bg-white/10 backdrop-blur-sm",
-              "focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50",
-              "hover:bg-white/15 hover:border-white/30",
-              value.startsWith('month_') || value === 'month'
-                ? "bg-white/15 text-white border-white/30"
-                : "text-white/80 hover:text-white"
-            )}
-          >
-            <SelectValue placeholder="Mes" />
-          </SelectTrigger>
-          <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
-            <SelectItem value="month" className="text-white/80 hover:text-white hover:bg-white/10">Mes actual</SelectItem>
-            {availableMonths.map((month) => (
-              <SelectItem key={month.value} value={month.value} className="text-white/80 hover:text-white hover:bg-white/10">
-                {month.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label htmlFor="date-filter" className="text-sm text-white/70 mb-2 block font-medium">
+          Fecha
+        </Label>
+        <CustomSelect
+          value={value.startsWith('month_') || value === 'month' ? value : ''}
+          onValueChange={onChange}
+          placeholder="Seleccionar mes"
+          className="min-w-[160px]"
+          active={value.startsWith('month_') || value === 'month'}
+          options={[
+            { value: 'month', label: 'Mes actual' },
+            ...availableMonths.map(month => ({ value: month.value, label: month.label }))
+          ]}
+        />
       </div>
 
       {onFilterChange && (
         <>
           <div>
-            <Label htmlFor="result-filter" className="text-sm text-white/70 mb-2 block font-medium">Resultado</Label>
-            <Select
-              onValueChange={(value) => onFilterChange('result', value === 'all' ? '' : value)}
-            >
-              <SelectTrigger 
-                id="result-filter"
-                className="px-4 py-2.5 h-auto text-sm font-medium rounded-xl transition-all duration-200 min-w-[160px] border border-white/20 bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 hover:bg-white/15 hover:border-white/30 text-white/80 hover:text-white"
-              >
-                <SelectValue placeholder="Cualquier resultado" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
-                <SelectItem value="all" className="text-white/80 hover:text-white hover:bg-white/10">Cualquier resultado</SelectItem>
-                <SelectItem value="WIN" className="text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/20">Ganador</SelectItem>
-                <SelectItem value="LOSS" className="text-rose-300 hover:text-rose-200 hover:bg-rose-500/20">Perdedor</SelectItem>
-                <SelectItem value="BREAKEVEN" className="text-amber-300 hover:text-amber-200 hover:bg-amber-500/20">Break-even</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="result-filter" className="text-sm text-white/70 mb-2 block font-medium">
+              Resultado
+            </Label>
+            <CustomSelect
+              value={selectedResult}
+              onValueChange={(value) => {
+                setSelectedResult(value);
+                onFilterChange('result', value === 'all' ? '' : value);
+              }}
+              placeholder="Cualquier resultado"
+              className="min-w-[160px]"
+              active={selectedResult !== ''}
+              options={[
+                { value: 'all', label: 'Cualquier resultado' },
+                { value: 'WIN', label: 'Ganador', className: 'text-emerald-300' },
+                { value: 'LOSS', label: 'Perdedor', className: 'text-rose-300' },
+                { value: 'BREAKEVEN', label: 'Break-even', className: 'text-amber-300' }
+              ]}
+            />
           </div>
 
           <div>
-            <Label htmlFor="direction-filter" className="text-sm text-white/70 mb-2 block font-medium">Dirección</Label>
-            <Select
-              onValueChange={(value) => onFilterChange('direction', value === 'all' ? '' : value)}
-            >
-              <SelectTrigger 
-                id="direction-filter"
-                className="px-4 py-2.5 h-auto text-sm font-medium rounded-xl transition-all duration-200 min-w-[160px] border border-white/20 bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 hover:bg-white/15 hover:border-white/30 text-white/80 hover:text-white"
-              >
-                <SelectValue placeholder="Cualquier dirección" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
-                <SelectItem value="all" className="text-white/80 hover:text-white hover:bg-white/10">Cualquier dirección</SelectItem>
-                <SelectItem value="LONG" className="text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/20">Long</SelectItem>
-                <SelectItem value="SHORT" className="text-rose-300 hover:text-rose-200 hover:bg-rose-500/20">Short</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="direction-filter" className="text-sm text-white/70 mb-2 block font-medium">
+              Dirección
+            </Label>
+            <CustomSelect
+              value={selectedDirection}
+              onValueChange={(value) => {
+                setSelectedDirection(value);
+                onFilterChange('direction', value === 'all' ? '' : value);
+              }}
+              placeholder="Cualquier dirección"
+              className="min-w-[160px]"
+              active={selectedDirection !== ''}
+              options={[
+                { value: 'all', label: 'Cualquier dirección' },
+                { value: 'LONG', label: 'Long', className: 'text-emerald-300' },
+                { value: 'SHORT', label: 'Short', className: 'text-rose-300' }
+              ]}
+            />
           </div>
 
           <div>
-            <Label htmlFor="pair-filter" className="text-sm text-white/70 mb-2 block font-medium">Par</Label>
-            <Select
-              onValueChange={(value) => onFilterChange('pair', value === 'all' ? '' : value)}
-            >
-              <SelectTrigger 
-                id="pair-filter"
-                className="px-4 py-2.5 h-auto text-sm font-medium rounded-xl transition-all duration-200 min-w-[160px] border border-white/20 bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 hover:bg-white/15 hover:border-white/30 text-white/80 hover:text-white"
-              >
-                <SelectValue placeholder="Cualquier par" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
-                <SelectItem value="all" className="text-white/80 hover:text-white hover:bg-white/10">Cualquier par</SelectItem>
-                {tradingPairs.map((pair) => (
-                  <SelectItem key={pair.id} value={pair.id} className="text-white/80 hover:text-white hover:bg-white/10">
-                    {pair.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="pair-filter" className="text-sm text-white/70 mb-2 block font-medium">
+              Par
+            </Label>
+            <CustomSelect
+              value={selectedPair}
+              onValueChange={(value) => {
+                setSelectedPair(value);
+                onFilterChange('pair', value === 'all' ? '' : value);
+              }}
+              placeholder="Cualquier par"
+              className="min-w-[160px]"
+              active={selectedPair !== ''}
+              options={[
+                { value: 'all', label: 'Cualquier par' },
+                ...tradingPairs.map(pair => ({ value: pair.id, label: pair.name }))
+              ]}
+            />
           </div>
 
           <div>
-            <Label htmlFor="account-filter" className="text-sm text-white/70 mb-2 block font-medium">Cuenta</Label>
-            <Select
-              onValueChange={(value) => onFilterChange('account', value === 'all' ? '' : value)}
-            >
-              <SelectTrigger 
-                id="account-filter"
-                className="px-4 py-2.5 h-auto text-sm font-medium rounded-xl transition-all duration-200 min-w-[160px] border border-white/20 bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 hover:bg-white/15 hover:border-white/30 text-white/80 hover:text-white"
-              >
-                <SelectValue placeholder="Cualquier cuenta" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
-                <SelectItem value="all" className="text-white/80 hover:text-white hover:bg-white/10">Cualquier cuenta</SelectItem>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id} className="text-white/80 hover:text-white hover:bg-white/10">
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="account-filter" className="text-sm text-white/70 mb-2 block font-medium">
+              Cuenta
+            </Label>
+            <CustomSelect
+              value={selectedAccount}
+              onValueChange={(value) => {
+                setSelectedAccount(value);
+                onFilterChange('account', value === 'all' ? '' : value);
+              }}
+              placeholder="Cualquier cuenta"
+              className="min-w-[160px]"
+              active={selectedAccount !== ''}
+              options={[
+                { value: 'all', label: 'Cualquier cuenta' },
+                ...accounts.map(account => ({ value: account.id, label: account.name }))
+              ]}
+            />
           </div>
 
           <div>
-            <Label htmlFor="bias-filter" className="text-sm text-white/70 mb-2 block font-medium">Bias</Label>
-            <Select
-              onValueChange={(value) => onFilterChange('bias', value === 'all' ? '' : value)}
-            >
-              <SelectTrigger 
-                id="bias-filter"
-                className="px-4 py-2.5 h-auto text-sm font-medium rounded-xl transition-all duration-200 min-w-[160px] border border-white/20 bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 hover:bg-white/15 hover:border-white/30 text-white/80 hover:text-white"
-              >
-                <SelectValue placeholder="Cualquier bias" />
-              </SelectTrigger>
-              <SelectContent className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl">
-                <SelectItem value="all" className="text-white/80 hover:text-white hover:bg-white/10">Cualquier bias</SelectItem>
-                <SelectItem value="BULLISH" className="text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/20">Alcista</SelectItem>
-                <SelectItem value="BEARISH" className="text-rose-300 hover:text-rose-200 hover:bg-rose-500/20">Bajista</SelectItem>
-                <SelectItem value="NEUTRAL" className="text-amber-300 hover:text-amber-200 hover:bg-amber-500/20">Neutral</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="bias-filter" className="text-sm text-white/70 mb-2 block font-medium">
+              Bias
+            </Label>
+            <CustomSelect
+              value={selectedBias}
+              onValueChange={(value) => {
+                setSelectedBias(value);
+                onFilterChange('bias', value === 'all' ? '' : value);
+              }}
+              placeholder="Cualquier bias"
+              className="min-w-[160px]"
+              active={selectedBias !== ''}
+              options={[
+                { value: 'all', label: 'Cualquier bias' },
+                { value: 'BULLISH', label: 'Alcista', className: 'text-emerald-300' },
+                { value: 'BEARISH', label: 'Bajista', className: 'text-rose-300' },
+                { value: 'NEUTRAL', label: 'Neutral', className: 'text-amber-300' }
+              ]}
+            />
           </div>
         </>
       )}

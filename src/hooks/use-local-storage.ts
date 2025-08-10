@@ -1,54 +1,64 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
+export function useLocalStorage<T>(key: string, initialValue: T) {
   // Estado para almacenar nuestro valor
-  // Pasa la función de inicialización a useState para que la lógica se ejecute solo una vez
+  // Pasa la función inicial al useState para que solo se ejecute una vez
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') {
       return initialValue;
     }
     
     try {
-      // Obtener del localStorage por clave
       const item = window.localStorage.getItem(key);
-      // Parsear el JSON almacenado o devolver initialValue si no hay nada
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      // Si hay error, devolver el valor inicial
-      console.error(error);
+      console.error(`Error reading localStorage key "${key}":`, error);
       return initialValue;
     }
   });
-  
-  // Función para actualizar tanto el state como el localStorage
-  const setValue = (value: T) => {
+
+  // Función para establecer el valor tanto en el estado como en localStorage
+  const setValue = (value: T | ((val: T) => T)) => {
     try {
-      // Permitir que value sea una función para seguir el mismo patrón que useState
+      // Permite que el valor sea una función para que tengamos la misma API que useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
-      // Guardar al estado
+      
+      // Guarda en el estado
       setStoredValue(valueToStore);
-      // Guardar a localStorage
+      
+      // Guarda en localStorage
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
     } catch (error) {
-      console.error(error);
+      console.error(`Error setting localStorage key "${key}":`, error);
     }
   };
-  
-  // Efecto para manejar cambios en localStorage de otras ventanas/tabs
+
+  // Sincroniza con cambios en localStorage de otras pestañas
   useEffect(() => {
-    function handleStorageChange(event: StorageEvent) {
-      if (event.key === key && event.newValue) {
-        setStoredValue(JSON.parse(event.newValue));
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === key && e.newValue !== null) {
+        try {
+          setStoredValue(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error(`Error parsing localStorage value for key "${key}":`, error);
+        }
       }
-    }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
     
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [key]);
-  
-  return [storedValue, setValue];
+
+  return [storedValue, setValue] as const;
 } 
