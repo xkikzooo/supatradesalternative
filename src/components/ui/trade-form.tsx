@@ -66,6 +66,7 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
+<<<<<<< HEAD
   const toLocalYMD = (d: Date) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -73,6 +74,9 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
     return `${y}-${m}-${day}`;
   };
   const [dateString, setDateString] = useState<string>(toLocalYMD(new Date()));
+=======
+  const [dateString, setDateString] = useState<string>(new Date().toISOString().split('T')[0]);
+>>>>>>> 6fcab056fee9ac6fa470b88c7e26b59159d6291b
   const [newPair, setNewPair] = useState("");
   const [showNewPairInput, setShowNewPairInput] = useState(false);
 
@@ -86,7 +90,11 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
     pnl: '0',
     riskAmount: 0,
     images: [] as string[],
+<<<<<<< HEAD
     date: toLocalYMD(new Date()),
+=======
+    date: new Date().toISOString().split('T')[0],
+>>>>>>> 6fcab056fee9ac6fa470b88c7e26b59159d6291b
     accountIds: [] as string[],
   });
 
@@ -122,14 +130,23 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
         pnl: Math.abs(initialTrade.pnl).toString(),
         riskAmount: initialTrade.riskAmount || 0,
         images: initialTrade.images || [],
+<<<<<<< HEAD
         date: initialTrade.date ? toLocalYMD(new Date(initialTrade.date)) : toLocalYMD(new Date()),
+=======
+        date: initialTrade.date ? new Date(initialTrade.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+>>>>>>> 6fcab056fee9ac6fa470b88c7e26b59159d6291b
         accountIds: initialTrade.accountId ? [initialTrade.accountId] : [],
       });
       
       if (initialTrade.date) {
+<<<<<<< HEAD
         const d = new Date(initialTrade.date);
         setDate(d);
         setDateString(toLocalYMD(d));
+=======
+        setDate(new Date(initialTrade.date));
+        setDateString(new Date(initialTrade.date).toISOString().split('T')[0]);
+>>>>>>> 6fcab056fee9ac6fa470b88c7e26b59159d6291b
       }
     }
   }, [isEditMode, initialTrade]);
@@ -152,7 +169,11 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
         return;
       }
 
+<<<<<<< HEAD
       if (!dateString) {
+=======
+      if (!date) {
+>>>>>>> 6fcab056fee9ac6fa470b88c7e26b59159d6291b
         showToast('Debes seleccionar una fecha', 'error');
         setIsSubmitting(false);
         return;
@@ -162,12 +183,17 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
       const pnlValue = Math.abs(parseFloat(formData.pnl.replace(/,/g, '')) || 0);
       const finalPnl = formData.result === 'LOSS' ? -pnlValue : pnlValue;
 
+<<<<<<< HEAD
       // Crear fecha en hora local a partir del input (evita desfases por zona horaria)
       const [yearStr, monthStr, dayStr] = dateString.split('-');
       const year = Number(yearStr);
       const month = Number(monthStr);
       const day = Number(dayStr);
       const localDate = new Date(year, month - 1, day, 12, 0, 0);
+=======
+      // Crear fecha en hora local para evitar problemas de zona horaria
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+>>>>>>> 6fcab056fee9ac6fa470b88c7e26b59159d6291b
 
       const dataToSubmit = {
         tradingPairId: formData.tradingPairId,
@@ -278,6 +304,7 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
                 <Input
                   type="date"
                   value={dateString}
+<<<<<<< HEAD
                   onChange={(e) => {
                     const value = e.target.value;
                     setDateString(value);
@@ -287,6 +314,9 @@ export function TradeForm({ mode, tradeId, initialTrade }: TradeFormProps) {
                       setDate(new Date(y, m - 1, d, 12, 0, 0));
                     }
                   }}
+=======
+                  onChange={(e) => setDateString(e.target.value)}
+>>>>>>> 6fcab056fee9ac6fa470b88c7e26b59159d6291b
                   className="px-4 py-2.5 border border-white/20 bg-white/10 backdrop-blur-sm text-white rounded-xl focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200"
                 />
               </div>
