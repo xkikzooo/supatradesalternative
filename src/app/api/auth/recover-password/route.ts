@@ -1,0 +1,102 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { randomBytes } from 'crypto';
+import { createTransport } from 'nodemailer';
+
+// Función para generar un token único
+function generateToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+// Configura el transportador de correo
+function getEmailTransporter() {
+  return createTransport({
+    host: process.env.EMAIL_SERVER_HOST,
+    port: Number(process.env.EMAIL_SERVER_PORT),
+    auth: {
+      user: process.env.EMAIL_SERVER_USER,
+      pass: process.env.EMAIL_SERVER_PASSWORD,
+    },
+    secure: process.env.EMAIL_SERVER_SECURE === 'true',
+  });
+}
+
+export async function POST(req: Request) {
+  try {
+    const { email } = await req.json();
+
+    if (!email) {
+      return NextResponse.json(
+        { error: 'El correo electrónico es requerido' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar si el usuario existe
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Por seguridad, no informamos si el usuario existe o no
+      return NextResponse.json(
+        { message: 'Si existe una cuenta con este correo, recibirás un enlace para restablecer tu contraseña' },
+        { status: 200 }
+      );
+    }
+
+    // Generar token para restablecer contraseña (válido por 1 hora)
+    const token = generateToken();
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 1); // Válido por 1 hora
+
+    // Guardar el token en la base de datos
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    });
+
+    // URL base de la aplicación
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+
+    // Enviar correo con el enlace
+    const transporter = getEmailTransporter();
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'no-reply@supatrades.com',
+      to: email,
+      subject: 'Restablece tu contraseña de Supatrades',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          <h2 style="color: #1e40af;">Restablece tu contraseña</h2>
+          <p>Hemos recibido una solicitud para restablecer tu contraseña en Supatrades.</p>
+          <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+          <p style="margin: 25px 0;">
+            <a href="${resetUrl}" style="background-color: #3b82f6; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Restablecer contraseña
+            </a>
+          </p>
+          <p>Este enlace expirará en 1 hora por razones de seguridad.</p>
+          <p>Si no solicitaste restablecer tu contraseña, ignora este correo.</p>
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea; color: #666; font-size: 12px;">
+            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+            <p>&copy; ${new Date().getFullYear()} Supatrades. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    return NextResponse.json({
+      message: 'Si existe una cuenta con este correo, recibirás un enlace para restablecer tu contraseña',
+    });
+  } catch (error) {
+    console.error('Error al procesar la recuperación de contraseña:', error);
+    return NextResponse.json(
+      { error: 'Error al procesar la solicitud' },
+      { status: 500 }
+    );
+  }
+} 

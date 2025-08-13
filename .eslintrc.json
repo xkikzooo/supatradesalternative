@@ -1,0 +1,4 @@
+{
+  "extends": "next/core-web-vitals",
+  "_NOTA_": "Este archivo está obsoleto, utiliza eslint.config.mjs en su lugar"
+}

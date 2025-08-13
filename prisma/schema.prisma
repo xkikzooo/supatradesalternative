@@ -1,0 +1,391 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// AUTENTICACIÓN Y USUARIOS
+// ========================================
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relaciones
+  accounts          Account[]
+  sessions          Session[]
+  trades            Trade[]
+  tradingAccounts   TradingAccount[]
+  tradingGoals      TradingGoal[]
+  gymDays           GymDay[]
+  notifications     Notification[]
+  userSettings      UserSettings?
+  subscription      Subscription?
+  tradingStrategies TradingStrategy[]
+  riskManagements   RiskManagement[]
+  watchlists        Watchlist[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ========================================
+// CONFIGURACIONES DE USUARIO
+// ========================================
+
+model UserSettings {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  theme                 String   @default("system") // "light", "dark", "system"
+  language              String   @default("es") // "es", "en"
+  timezone              String   @default("UTC")
+  currency              String   @default("USD")
+  notifications         Json     @default("{\"email\": true, \"push\": true}")
+  tradingPreferences    Json     @default("{}")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ========================================
+// SUSCRIPCIONES
+// ========================================
+
+model Subscription {
+  id               String            @id @default(cuid())
+  userId           String            @unique
+  planId           String
+  status           SubscriptionStatus
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean         @default(false)
+  stripeCustomerId   String?
+  stripeSubscriptionId String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  INCOMPLETE
+  TRIAL
+}
+
+// ========================================
+// TRADING PRINCIPAL
+// ========================================
+
+model TradingAccount {
+  id            String   @id @default(cuid())
+  name          String
+  balance       Float
+  initialBalance Float
+  broker        String
+  type          String
+  currency      String
+  riskPerTrade  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String
+  
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades Trade[]
+
+  @@index([userId])
+}
+
+model TradingPair {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String?  // "FOREX", "CRYPTO", "STOCKS", "COMMODITIES"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  trades      Trade[]
+  watchlists  Watchlist[]
+}
+
+model Trade {
+  id              String        @id @default(cuid())
+  tradingPairId   String
+  tradingPair     TradingPair   @relation(fields: [tradingPairId], references: [id], onDelete: Cascade)
+  direction       TradeDirection
+  bias           TradeBias?
+  biasExplanation String?
+  psychology     String?
+  result         TradeResult
+  pnl            Float
+  riskAmount     Float?
+  entryPrice     Float?
+  exitPrice      Float?
+  stopLoss       Float?
+  takeProfit     Float?
+  volume         Float?
+  images         String[]
+  tags           String[]
+  notes          String?
+  date           DateTime
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  strategyId     String?
+  strategy       TradingStrategy? @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+  shareRecord    TradeShare?
+
+  @@index([userId])
+  @@index([tradingPairId])
+  @@index([accountId])
+  @@index([date])
+}
+
+// ========================================
+// COMPARTIR TRADES
+// ========================================
+
+model TradeShare {
+  id        String   @id @default(cuid())
+  tradeId   String   @unique
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+}
+
+// ========================================
+// OBJETIVOS DE TRADING
+// ========================================
+
+model TradingGoal {
+  id          String        @id @default(cuid())
+  name        String
+  type        GoalType
+  target      Float
+  current     Float         @default(0)
+  period      GoalPeriod
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  userId      String
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+enum GoalType {
+  PROFIT
+  WINRATE
+  TRADES
+  DRAWDOWN
+  ROI
+  SHARPE_RATIO
+}
+
+enum GoalPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+// ========================================
+// ESTRATEGIAS DE TRADING
+// ========================================
+
+model TradingStrategy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  rules       Json     // Reglas de la estrategia en JSON
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades Trade[]
+
+  @@index([userId])
+}
+
+// ========================================
+// GESTIÓN DE RIESGO
+// ========================================
+
+model RiskManagement {
+  id                String   @id @default(cuid())
+  name              String
+  maxRiskPerTrade   Float    // Porcentaje máximo de riesgo por trade
+  maxDailyLoss      Float?   // Pérdida máxima diaria
+  maxDrawdown       Float?   // Drawdown máximo permitido
+  positionSizing    Json     // Reglas de sizing en JSON
+  stopLossRules     Json?    // Reglas de stop loss
+  takeProfitRules   Json?    // Reglas de take profit
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  userId            String
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ========================================
+// LISTAS DE SEGUIMIENTO
+// ========================================
+
+model Watchlist {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String
+  
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tradingPairs  TradingPair[]
+
+  @@index([userId])
+}
+
+// ========================================
+// GIMNASIO Y FITNESS
+// ========================================
+
+model GymDay {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  notes     String?
+  exercises Json?    // Lista de ejercicios realizados
+  duration  Int?     // Duración en minutos
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+// ========================================
+// NOTIFICACIONES
+// ========================================
+
+model Notification {
+  id        String            @id @default(cuid())
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean           @default(false)
+  data      Json?             // Datos adicionales de la notificación
+  createdAt DateTime          @default(now())
+  userId    String
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  TRADE_ALERT
+  GOAL_ACHIEVED
+  GOAL_MISSED
+  RISK_WARNING
+  GENERAL
+  SYSTEM
+}
+
+// ========================================
+// ENUMS EXISTENTES
+// ========================================
+
+enum TradeDirection {
+  LONG
+  SHORT
+}
+
+enum TradeBias {
+  BULLISH
+  BEARISH
+  NEUTRAL
+}
+
+enum TradeResult {
+  WIN
+  LOSS
+  BREAKEVEN
+}
