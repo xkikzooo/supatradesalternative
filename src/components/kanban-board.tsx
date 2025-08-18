@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState, useEffect, type ReactNode } from 'react';
-import { Plus, Clock, TrendingUp, CheckCircle, Flame, Percent } from 'lucide-react';
+import { Plus, Clock, TrendingUp, CheckCircle, Flame, Percent, Trash } from 'lucide-react';
+
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -46,7 +47,7 @@ function daysLeft(createdAtISO: string) {
   return remaining > 0 ? remaining : 0;
 }
 
-function KanbanCard({ item, onClick }: { item: KanbanItem; onClick: () => void }) {
+function KanbanCard({ item, onClick, onDelete }: { item: KanbanItem; onClick: () => void; onDelete: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -56,20 +57,21 @@ function KanbanCard({ item, onClick }: { item: KanbanItem; onClick: () => void }
   const remaining = daysLeft(item.createdAt);
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={`rounded-lg bg-[#0A0A0A]/60 p-3 border border-white/10 backdrop-blur-sm mb-3 ${isDragging ? 'rotate-1 scale-[1.01]' : ''}`}>
-      <div className="flex items-center justify-between mb-1">
-        <h4 className="text-white text-sm font-medium truncate">{item.accountName}</h4>
-        <button onClick={onClick} className="px-1.5 py-0.5 text-[11px] rounded-md bg-white/10 text-white/80 hover:bg-white/20 flex items-center gap-1">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={`rounded-md bg-[#0A0A0A]/60 p-2 border border-white/10 backdrop-blur-sm mb-2 ${isDragging ? 'rotate-1 scale-[1.01]' : ''}`}>
+      <div className="flex items-center gap-2">
+        <h4 className="text-white text-xs font-medium truncate flex-1">{item.accountName}</h4>
+        <button onClick={onClick} className="px-1 py-0.5 text-[10px] rounded bg-white/10 text-white/80 hover:bg-white/20 flex items-center gap-1">
           <Percent className="h-3 w-3" /> {item.percent}%
         </button>
+        <button onClick={onDelete} aria-label="Eliminar" className="ml-1 p-1 rounded hover:bg-white/10 text-white/60 hover:text-white/90">
+          <Trash className="h-3.5 w-3.5" />
+        </button>
       </div>
-      <div className="flex items-center justify-between text-xs">
+      <div className="mt-1 flex items-center gap-2 text-[11px] leading-tight">
         <span className="text-white/70 truncate">{item.propFirm}</span>
-        <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/10 truncate">{item.minisRisk}</span>
-      </div>
-      <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-        <span className="text-white/60">Evaluación</span>
-        <span className={`px-2 py-0.5 rounded-full ${remaining > 0 ? 'bg-white/10 text-white/80' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>{remaining} días</span>
+        <span className="truncate text-white/70">•</span>
+        <span className="px-1.5 py-0.5 rounded bg-white/5 text-white/80 border border-white/10 truncate">{item.minisRisk}</span>
+        <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] border ${remaining > 0 ? 'bg-white/5 text-white/80 border-white/10' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>{remaining}d</span>
       </div>
     </div>
   );
@@ -149,6 +151,10 @@ export function KanbanBoard() {
     setIsPercentOpen(false);
   };
 
+  const deleteItem = (id: string) => {
+    setItems(prev => prev.filter(it => it.id !== id));
+  };
+
   return (
     <div className="space-y-6">
       <div className="p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10">
@@ -177,7 +183,7 @@ export function KanbanBoard() {
                 <SortableContext id={col.id} items={byColumn[col.id].map(i => i.id)} strategy={verticalListSortingStrategy}>
                   <div id={col.id} className="min-h-[420px] p-4 rounded-xl border bg-white/5 border-white/10 backdrop-blur-sm">
                     {byColumn[col.id].map(item => (
-                      <KanbanCard key={item.id} item={item} onClick={() => openPercentModal(item.id)} />
+                      <KanbanCard key={item.id} item={item} onClick={() => openPercentModal(item.id)} onDelete={() => deleteItem(item.id)} />
                     ))}
                   </div>
                 </SortableContext>
