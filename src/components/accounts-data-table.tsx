@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { AccountModal } from "./ui/AccountModal";
-import { AccountCard } from "./ui/AccountCard";
 import { ConfirmDeleteModal } from "./ui/confirm-delete-modal";
 import { toast } from "sonner";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 interface Account {
   id: string;
@@ -95,18 +96,49 @@ export function AccountsDataTable() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {accounts.map((account) => (
-        <AccountCard
-          key={account.id}
-          account={account}
-          onEdit={handleEdit}
-          onDelete={(id) => {
-            setSelectedAccount(accounts.find(a => a.id === id) || null);
-            setIsDeleteModalOpen(true);
-          }}
-        />
-      ))}
+    <div className="w-full overflow-hidden rounded-xl border border-white/10">
+      <Table className="text-white">
+        <TableHeader>
+          <TableRow className="bg-white/5">
+            <TableHead className="text-white/80">Nombre</TableHead>
+            <TableHead className="text-white/80">Broker</TableHead>
+            <TableHead className="text-white/80">Tipo</TableHead>
+            <TableHead className="text-white/80">Balance</TableHead>
+            <TableHead className="text-white/80">Inicial</TableHead>
+            <TableHead className="text-white/80">Moneda</TableHead>
+            <TableHead className="text-white/80">Riesgo/Trade</TableHead>
+            <TableHead className="text-white/80">Creada</TableHead>
+            <TableHead className="text-white/80">Actualizada</TableHead>
+            <TableHead className="text-right text-white/80">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {accounts.map((a) => (
+            <TableRow key={a.id}>
+              <TableCell className="font-medium text-white">{a.name}</TableCell>
+              <TableCell className="text-white/80">{a.broker}</TableCell>
+              <TableCell className="text-white/80">{a.type}</TableCell>
+              <TableCell className="text-white">{formatCurrency(a.balance, a.currency)}</TableCell>
+              <TableCell className="text-white/80">{formatCurrency(a.initialBalance, a.currency)}</TableCell>
+              <TableCell className="text-white/70">{a.currency}</TableCell>
+              <TableCell className="text-white/70">{a.riskPerTrade ?? '-'}</TableCell>
+              <TableCell className="text-white/60">{new Date(a.createdAt).toLocaleDateString()}</TableCell>
+              <TableCell className="text-white/60">{new Date(a.updatedAt).toLocaleDateString()}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Button size="sm" className="bg-white/10 hover:bg-white/20 text-white/90" onClick={() => handleEdit(a.id)}>Editar</Button>
+                  <Button size="sm" variant="destructive" onClick={() => { setSelectedAccount(a); setIsDeleteModalOpen(true); }}>Eliminar</Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+          {accounts.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={10} className="text-center text-white/60 py-8">No hay cuentas registradas.</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       <AccountModal
         isOpen={isModalOpen}
@@ -130,4 +162,5 @@ export function AccountsDataTable() {
       />
     </div>
   );
-} 
+}
+ 
