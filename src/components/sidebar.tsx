@@ -11,7 +11,8 @@ import {
   LogOut,
   Wallet,
   MoreVertical,
-  Plus
+  Plus,
+  Kanban
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuContent, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -83,6 +84,17 @@ export function Sidebar() {
           >
             <Wallet className="h-4 w-4" />
             Cuentas
+          </Link>
+          
+          <Link
+            href="/kanban"
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/70 transition-all duration-200 hover:text-white hover:bg-white/10 text-sm font-medium',
+              pathname === '/kanban' ? 'bg-white/10 text-white border border-white/20' : 'hover:border-white/20'
+            )}
+          >
+            <Kanban className="h-4 w-4" />
+            Kanban
           </Link>
         </nav>
       </div>
